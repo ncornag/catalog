@@ -1,0 +1,5 @@
+updateChildAncestorsForIdService!!! updateChildAncestorsForId updateChildAncestorsForIdQueue
+[90m2023-10-03 16:24:58.994[39m [32m info[39m: [97mServer listening at http://0.0.0.0:3000[39m
+closing application on SIGINT
+[90m2023-10-03 16:24:59.275[39m [36mdebug[39m: [97m# →DB: 6 {"endSessions":[{"id":"qek5AoyrSPe8RQvPAXl+CQ=="},{"id":"LYQ/KJrzQSSv8hiqVcfqRA=="}],"lsid":{"id":"qek5AoyrSPe8RQvPAXl+CQ=="},"$db":"admin","$readPreference":{"mode":"primaryPreferred"}}[39m
+[90m2023-10-03 16:24:59.276[39m [36mdebug[39m: [97m# ←DB: 6 undefined[39m
