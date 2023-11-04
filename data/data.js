@@ -19,8 +19,12 @@
 
 use example;
 
+db.Catalog.deleteMany({});
+db.CatalogSync.deleteMany({});
 db.ClassificationCategory.deleteMany({});
 db.ProductCategory.deleteMany({});
+db.ProductStage.deleteMany({});
+db.ProductOnline.deleteMany({});
 
 // Classification Tree A
 db.ClassificationCategory.insertMany([
@@ -47,8 +51,7 @@ db.ClassificationCategory.insertMany([
     ],
     ancestors: [],
     version: 0,
-    createdAt: "2023-01-15T00:00:00.000+00:00",
-    updatedAt: "2023-01-15T00:00:00.000+00:00"
+    createdAt: "2023-01-15T00:00:00.000+00:00"
   },
   {
     _id: "hardware",
@@ -59,8 +62,7 @@ db.ClassificationCategory.insertMany([
     attributes: [],
     ancestors: [],
     version: 0,
-    createdAt: "2023-01-15T00:00:00.000+00:00",
-    updatedAt: "2023-01-15T00:00:00.000+00:00"
+    createdAt: "2023-01-15T00:00:00.000+00:00"
   },
   {
     _id: "cpu",
@@ -74,8 +76,7 @@ db.ClassificationCategory.insertMany([
     ],
     ancestors: ["hardware"],
     version: 0,
-    createdAt: "2023-01-15T00:00:00.000+00:00",
-    updatedAt: "2023-01-15T00:00:00.000+00:00"
+    createdAt: "2023-01-15T00:00:00.000+00:00"
   },
   {
     _id: "photography",
@@ -89,8 +90,7 @@ db.ClassificationCategory.insertMany([
     parent: "hardware",
     ancestors: ["hardware"],
     version: 0,
-    createdAt: "2023-01-15T00:00:00.000+00:00",
-    updatedAt: "2023-01-15T00:00:00.000+00:00"
+    createdAt: "2023-01-15T00:00:00.000+00:00"
   }
 ]);
 
@@ -105,8 +105,7 @@ db.ClassificationCategory.insertMany([
     attributes: [{ key: "curr", label: "current", isRequired: true, type: "number" }],
     ancestors: [],
     version: 0,
-    createdAt: "2023-01-15T00:00:00.000+00:00",
-    updatedAt: "2023-01-15T00:00:00.000+00:00"
+    createdAt: "2023-01-15T00:00:00.000+00:00"
   },
   {
     _id: "machines",
@@ -127,8 +126,7 @@ db.ClassificationCategory.insertMany([
     ],
     ancestors: ["electricity"],
     version: 0,
-    createdAt: "2023-01-15T00:00:00.000+00:00",
-    updatedAt: "2023-01-15T00:00:00.000+00:00"
+    createdAt: "2023-01-15T00:00:00.000+00:00"
   },
   {
     _id: "software",
@@ -142,12 +140,11 @@ db.ClassificationCategory.insertMany([
     ],
     ancestors: ["electricity"],
     version: 0,
-    createdAt: "2023-01-15T00:00:00.000+00:00",
-    updatedAt: "2023-01-15T00:00:00.000+00:00"
+    createdAt: "2023-01-15T00:00:00.000+00:00"
   }
 ]);
 
-// Product Category
+// Product Category Tree A
 db.ProductCategory.insertMany([
   {
     _id: "mana",
@@ -158,8 +155,7 @@ db.ProductCategory.insertMany([
     classificationCategories: ["machines"],
     ancestors: [],
     version: 0,
-    createdAt: "2023-01-15T00:00:00.000+00:00",
-    updatedAt: "2023-01-15T00:00:00.000+00:00"
+    createdAt: "2023-01-15T00:00:00.000+00:00"
   },
   {
     _id: "printers",
@@ -170,8 +166,7 @@ db.ProductCategory.insertMany([
     classificationCategories: [],
     ancestors: ["mana"],
     version: 0,
-    createdAt: "2023-01-15T00:00:00.000+00:00",
-    updatedAt: "2023-01-15T00:00:00.000+00:00"
+    createdAt: "2023-01-15T00:00:00.000+00:00"
   },
   {
     _id: "laptops",
@@ -182,7 +177,144 @@ db.ProductCategory.insertMany([
     classificationCategories: ["cpu"],
     ancestors: ["mana"],
     version: 0,
-    createdAt: "2023-01-15T00:00:00.000+00:00",
-    updatedAt: "2023-01-15T00:00:00.000+00:00"
+    createdAt: "2023-01-15T00:00:00.000+00:00"
   }
 ]);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Catalog
+db.Catalog.insertMany([
+  {
+    _id: "stage",
+    projectId: 'TestProject',
+    name: "Stage"
+  },
+  {
+    _id: "online",
+    projectId: 'TestProject',
+    name: "Online"
+  }
+])
+
+// Catalog Sync
+db.CatalogSync.insertMany([
+  {
+    _id: "stage-2-online",
+    projectId: 'TestProject',
+    sourceCatalog: "stage",
+    targetCatalog: "online",
+    removeNonExistent: false,  // Remove elements from Target if they no longer exist in Source
+    createNewItems: true,      // Create new elements in Target if they do not exist
+    propertiesToSync: [],      // Sync all properties
+    runAt: "00 01 * * *",      // Run at a specific time, cron format
+    lastSync: "2023-01-15T00:00:00.000+00:00",
+    version: 0,
+    createdAt: "2023-01-15T00:00:00.000+00:00"
+  }
+])
+
+// Classification Tree Adidas
+db.ClassificationCategory.insertMany([
+  {
+    _id: "shoes",
+    projectId: 'TestProject',
+    name: "Shoes",
+    key: "shoes",
+    parent: "",
+    attributes: [
+      { key: "color", label: "Color", isRequired: true, type: "text"},
+      { key: "size", label: "Size", isRequired: true, type: "text"},
+    ],
+    ancestors: [],
+    version: 0,
+    createdAt: "2023-01-15T00:00:00.000+00:00"
+  }
+]);
+
+// Product Category Tree Adidas
+db.ProductCategory.insertMany([
+  {
+    _id: "home",
+    projectId: 'TestProject',
+    name: "Home",
+    key: "home",
+    parent: "",
+    classificationCategories: [],
+    ancestors: [],
+    version: 0,
+    createdAt: "2023-01-15T00:00:00.000+00:00"
+  },
+  {
+    _id: "running",
+    projectId: 'TestProject',
+    name: "Running",
+    key: "running",
+    parent: "home",
+    classificationCategories: [],
+    ancestors: ["home"],
+    version: 0,
+    createdAt: "2023-01-15T00:00:00.000+00:00"
+  },
+  {
+    _id: "shoes",
+    projectId: 'TestProject',
+    name: "shoes",
+    key: "shoes",
+    parent: "running",
+    classificationCategories: ["shoes"],
+    ancestors: ["running"],
+    version: 0,
+    createdAt: "2023-01-15T00:00:00.000+00:00"
+  }
+]);
+
+// Product Adidas
+db.ProductStage.insertMany([
+  {
+    _id: "adizeroPrimeX2-base",
+    projectId: 'TestProject',
+    catalog: "stage",
+    name: "ADIZERO PRIME X 2 STRUNG RUNNING SHOES",
+    description: "Built with innovative technology and designed without ...",
+    slug: "adizero-prime-x-2-strung-running-shoes",
+    searchKeywords: ["adizero", "prime", "x", "2", "strung", "running", "shoes"],
+    categories: ["shoes"],
+    isBase: true
+  },
+  {
+    _id: "adizeroPrimeX2-White-001",
+    projectId: 'TestProject',
+    catalog: "stage",
+    name: "ADIZERO PRIME X 2 STRUNG RUNNING SHOES WHITE!!!", // Overwrited name
+    sku: "HP9708_570",
+    searchKeywords: ["white"], // Added new keywords
+    parent: "adizeroPrimeX2-base",
+    attributes: {
+      color: "Cloud White",
+      size: "M 6/W 7"
+    }
+  },
+  {
+    _id: "adizeroPrimeX2-White-002",
+    projectId: 'TestProject',
+    catalog: "stage",
+    sku: "HP9708_580",
+    parent: "adizeroPrimeX2-base",
+    attributes: {
+      color: "Cloud White",
+      size: "M 6.5/W 7.5"
+    }
+  },
+  {
+    _id: "adizeroPrimeX2-Black-001",
+    projectId: 'TestProject',
+    catalog: "stage",
+    sku: "HP9709_580",
+    parent: "adizeroPrimeX2-base",
+    attributes: {
+      color: "Core Black",
+      size: "M 6.5/W 7.5"
+    }
+  }
+])

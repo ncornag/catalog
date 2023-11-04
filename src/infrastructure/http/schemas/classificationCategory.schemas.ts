@@ -2,10 +2,7 @@ import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
 import {
   UpdateClassificationCategoryAction,
-  ClassificationCategorySchema,
-  UpdateClassificationCategoryChangeNameSchema,
-  UpdateClassificationCategoryChangeParentSchema,
-  UpdateClassificationCategorySetKeySchema
+  ClassificationCategorySchema
 } from '@core/entities/classificationCategory';
 // import { notFoundSchema } from '@infrastructure/http/schemas/error.schemas'
 
@@ -16,7 +13,7 @@ const defaultExample = {
 
 export const CreateClassificationCategoryBodySchema = Type.Omit(
   ClassificationCategorySchema,
-  ['id', 'ancestors', 'createdAt', 'updatedAt', 'version'],
+  ['id', 'ancestors', 'createdAt', 'lastModifiedAt', 'version'],
   {
     examples: [defaultExample],
     additionalProperties: false

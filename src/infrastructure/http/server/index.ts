@@ -20,6 +20,8 @@ import { updateChildAncestorsForIdService } from '@core/services/listeners/updat
 import classificationCategoryRoutes from '@infrastructure/http/routes/classificationCategory.routes';
 import productCategoryRoutes from '@infrastructure/http/routes/productCategory.routes';
 import productRoutes from '@infrastructure/http/routes/product.routes';
+import catalogRoutes from '@infrastructure/http/routes/catalog.routes';
+import catalogSyncRoutes from '@infrastructure/http/routes/catalogSync.routes';
 
 export const createServer = async (): Promise<FastifyInstance> => {
   const environment = process.env.NODE_ENV ?? 'production';
@@ -94,6 +96,8 @@ export const createServer = async (): Promise<FastifyInstance> => {
   await server.register(classificationCategoryRoutes, { prefix: '/classificationCategories' });
   await server.register(productCategoryRoutes, { prefix: '/productCategories' });
   await server.register(productRoutes, { prefix: '/products' });
+  await server.register(catalogRoutes, { prefix: '/catalog' });
+  await server.register(catalogSyncRoutes, { prefix: '/catalogSync' });
 
   // Load Services
   auditLogService(server);

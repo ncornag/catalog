@@ -6,7 +6,9 @@ import {
   UpdateProductBody,
   FindProductParms,
   postProductSchema,
-  updateProductSchema
+  updateProductSchema,
+  FindProductQueryString,
+  FindProductQueryStringSchema
 } from '@infrastructure/http/schemas/product.schemas';
 import { productService } from '@core/services/product.svc';
 import { Product } from '@core/entities/product';
@@ -19,8 +21,11 @@ export default <FastifyPluginAsync>async function (server: FastifyInstance, opts
     method: 'POST',
     url: '/',
     schema: postProductSchema,
-    handler: async (request: FastifyRequest<{ Body: CreateProductBody }>, reply: FastifyReply) => {
-      const result: Result<Product, AppError> = await service.createProduct(request.body);
+    handler: async (
+      request: FastifyRequest<{ Body: CreateProductBody; Querystring: FindProductQueryString }>,
+      reply: FastifyReply
+    ) => {
+      const result: Result<Product, AppError> = await service.createProduct(request.query.catalog, request.body);
 
       if (!result.ok) return reply.sendAppError(result.val);
       return reply.code(201).send(result.val);
@@ -33,10 +38,15 @@ export default <FastifyPluginAsync>async function (server: FastifyInstance, opts
     url: '/:id',
     schema: updateProductSchema,
     handler: async (
-      request: FastifyRequest<{ Params: FindProductParms; Body: UpdateProductBody }>,
+      request: FastifyRequest<{
+        Params: FindProductParms;
+        Body: UpdateProductBody;
+        Querystring: FindProductQueryString;
+      }>,
       reply: FastifyReply
     ) => {
       const result: Result<Product, AppError> = await service.updateProduct(
+        request.query.catalog,
         request.params.id,
         request.body.version,
         request.body.actions
@@ -51,19 +61,19 @@ export default <FastifyPluginAsync>async function (server: FastifyInstance, opts
   server.route({
     method: 'GET',
     url: '/:id',
-    handler: async (request: FastifyRequest<{ Params: FindProductParms }>, reply: FastifyReply) => {
-      const result: Result<Product, AppError> = await service.findProductById(request.params.id);
-      if (!result.ok) return reply.sendAppError(result.val);
-      return reply.code(201).send(result.val);
-    }
-  });
-
-  // VALIDATE
-  server.route({
-    method: 'POST',
-    url: '/:id/validate',
-    handler: async (request: FastifyRequest<{ Params: FindProductParms }>, reply: FastifyReply) => {
-      const result: Result<Boolean, AppError> = await service.validate(request.params.id, request.body);
+    schema: {
+      querystring: FindProductQueryStringSchema
+    },
+    handler: async (
+      request: FastifyRequest<{ Params: FindProductParms; Querystring: FindProductQueryString }>,
+      reply: FastifyReply
+    ) => {
+      console.log(request.query);
+      const result: Result<Product, AppError> = await service.findProductById(
+        request.query.catalog,
+        request.params.id,
+        request.query.materialized
+      );
       if (!result.ok) return reply.sendAppError(result.val);
       return reply.code(201).send(result.val);
     }

@@ -16,7 +16,7 @@ export interface ITree<T> {
 }
 
 export interface ITreeRepo<DAO> {
-  find(query: any, options: any): Promise<Result<DAO[], AppError>>;
+  find(catalogId: string, query: any, options: any): Promise<Result<DAO[], AppError>>;
 }
 
 export const UpdateChangeParentSchema = Type.Object(

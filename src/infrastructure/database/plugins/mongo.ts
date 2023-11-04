@@ -14,6 +14,9 @@ import {
   ProductCategoryRepository,
   getProductCategoryCollection
 } from '@infrastructure/repositories/productCategory.repo';
+import { ProductRepository, getProductCollection } from '@infrastructure/repositories/product.repo';
+import { CatalogRepository, getCatalogCollection } from '@infrastructure/repositories/catalog.repo';
+import { CatalogSyncRepository, getCatalogSyncCollection } from '@infrastructure/repositories/catalogSync.repo';
 
 declare module 'fastify' {
   export interface FastifyInstance {
@@ -122,14 +125,23 @@ export default fp(async function (server: FastifyInstance) {
   // Register Collections
   server.db.col.classificationCategory = getClassificationCategoryCollection(server.mongo.db!);
   server.db.col.productCategory = getProductCategoryCollection(server.mongo.db!);
+  server.db.col.product = await getProductCollection(server.mongo.db!);
+  server.db.col.catalog = getCatalogCollection(server.mongo.db!);
+  server.db.col.catalogSync = getCatalogSyncCollection(server.mongo.db!);
 
   // Register Repositories
   server.db.repo.classificationCategoryRepository = new ClassificationCategoryRepository(server);
   server.db.repo.productCategoryRepository = new ProductCategoryRepository(server);
+  server.db.repo.productRepository = new ProductRepository(server);
+  server.db.repo.catalogRepository = new CatalogRepository(server);
+  server.db.repo.catalogSyncRepository = new CatalogSyncRepository(server);
 
   // Indexes
-  await Promise.all([
-    server.db.col.classificationCategory.createIndex({ projectId: 1, key: 1 }, { name: 'CC_Key' }), // unique: true
-    server.db.col.productCategory.createIndex({ projectId: 1, 'attributes.name': 1 }, { name: 'CCA_Key' })
-  ]);
+  const indexes = [];
+  indexes.push(server.db.col.classificationCategory.createIndex({ projectId: 1, key: 1 }, { name: 'CC_Key' })); // unique: true
+  indexes.push(server.db.col.productCategory.createIndex({ projectId: 1, 'attributes.name': 1 }, { name: 'CCA_Key' }));
+  Object.keys(server.db.col.product).forEach((key) => {
+    indexes.push(server.db.col.product[key].createIndex({ parent: 1 }, { name: 'parent' }));
+  });
+  await Promise.all(indexes);
 });

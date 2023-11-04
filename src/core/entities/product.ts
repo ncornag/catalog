@@ -37,9 +37,18 @@ export type UpdateProductAction = Static<typeof UpdateProductAction>;
 export const ProductSchema = Type.Object(
   {
     id: Type.String(),
+    catalog: Type.String(),
     name: Type.String(),
-    description: Type.String(),
+    description: Type.Optional(Type.String()),
+    sku: Type.Optional(Type.String()), // Optional in the base product
+    slug: Type.Optional(Type.String()), // Optional in the variants
+    searchKeywords: Type.Array(Type.String(), { default: [] }),
     categories: Type.Array(Type.String(), { default: [] }),
+    attributes: Type.Any({ default: {} }),
+    isBase: Type.Boolean({ default: true }), // Is this a base product or a variant?
+    parent: Type.String({ default: '' }), // If this is a variant, the parent product id
+    status: Type.Optional(Type.String()), // Active, Inactive... Approved, Pending, Rejected
+    original: Type.Optional(Type.Any()), // The original product before any changes
     ...AuditFields
   },
   { additionalProperties: false }

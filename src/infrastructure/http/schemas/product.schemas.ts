@@ -19,7 +19,7 @@ const ProductResponse = Type.Composite([ProductSchema], {
 });
 
 // CREATE
-export const CreateProductBodySchema = Type.Omit(ProductSchema, ['id', 'createdAt', 'updatedAt', 'version'], {
+export const CreateProductBodySchema = Type.Omit(ProductSchema, ['id', 'createdAt', 'lastModifiedAt', 'version'], {
   examples: [defaultExample],
   additionalProperties: false
 });
@@ -36,7 +36,12 @@ export const UpdateProductBodySchema = Type.Object(
 export type UpdateProductBody = Static<typeof UpdateProductBodySchema>;
 
 export const FindProductParmsSchema = Type.Object({ id: Type.String() });
+export const FindProductQueryStringSchema = Type.Object({
+  catalog: Type.String(),
+  materialized: Type.Boolean({ default: false })
+});
 export type FindProductParms = Static<typeof FindProductParmsSchema>;
+export type FindProductQueryString = Static<typeof FindProductQueryStringSchema>;
 
 // ROUTE SCHEMAS
 

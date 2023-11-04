@@ -13,11 +13,10 @@ import { ChangeDescriptionActionHandler } from './actions/changeDescription.hand
 
 // SERVICE INTERFACE
 interface IProductService {
-  createProduct: (payload: CreateProductBody) => Promise<Result<Product, AppError>>;
-  updateProduct: (id: string, version: number, actions: any) => Promise<Result<Product, AppError>>;
-  findProductById: (id: string) => Promise<Result<Product, AppError>>;
-  saveProduct: (category: Product) => Promise<Result<Product, AppError>>;
-  validate: (id: string, data: any) => Promise<Result<any, AppError>>;
+  createProduct: (catalogId: string, payload: CreateProductBody) => Promise<Result<Product, AppError>>;
+  updateProduct: (catalogId: string, id: string, version: number, actions: any) => Promise<Result<Product, AppError>>;
+  findProductById: (catalogId: string, id: string, materialized: boolean) => Promise<Result<Product, AppError>>;
+  saveProduct: (catalogId: string, category: Product) => Promise<Result<Product, AppError>>;
 }
 
 const toEntity = ({ _id, ...remainder }: ProductDAO): Product => ({
@@ -34,25 +33,26 @@ export const productService = (server: any): IProductService => {
   const repo = server.db.repo.productRepository as IProductRepository;
   const actionsRunner = new UpdateEntityActionsRunner<ProductDAO, IProductRepository>();
   return {
-    // CREATE CATEGORY
-    createProduct: async (payload: CreateProductBody): Promise<Result<Product, AppError>> => {
+    // CREATE PRODUCT
+    createProduct: async (catalogId: string, payload: CreateProductBody): Promise<Result<Product, AppError>> => {
       // Save the entity
-      const result = await repo.create({
+      const result = await repo.create(catalogId, {
         id: nanoid(),
         ...payload
-      });
+      } as Product);
       if (result.err) return result;
       return new Ok(toEntity(result.val));
     },
 
-    // UPDATE CATEGORY
+    // UPDATE PRODUCT
     updateProduct: async (
+      catalogId: string,
       id: string,
       version: number,
       actions: UpdateProductAction[]
     ): Promise<Result<Product, AppError>> => {
       // Find the Entity
-      let result = await repo.findOne(id, version);
+      let result = await repo.findOne(catalogId, id, version);
       if (result.err) return result;
       const entity: ProductDAO = result.val;
       const toUpdateEntity = Value.Clone(entity);
@@ -63,13 +63,14 @@ export const productService = (server: any): IProductService => {
       const difference = Value.Diff(entity, toUpdateEntity);
       if (difference.length > 0) {
         // Save the entity
-        const saveResult = await repo.updateOne(id, version, actionRunnerResults.val.update);
+        const saveResult = await repo.updateOne(catalogId, id, version, actionRunnerResults.val.update);
         if (saveResult.err) return saveResult;
         toUpdateEntity.version = version + 1;
         // Send differences via messagging
         const messages = await server.messages; //rabbitMQProducer;
         messages.publish(server.config.EXCHANGE, server.config.AUDITLOG_ROUTE, {
           entity: 'product',
+          catalogId,
           source: entity,
           difference,
           metadata: { type: 'entityUpdate' }
@@ -86,27 +87,55 @@ export const productService = (server: any): IProductService => {
       return Ok(toEntity(toUpdateEntity));
     },
 
-    // FIND CATEGORY
-    findProductById: async (id: string): Promise<Result<Product, AppError>> => {
-      const result = await repo.findOne(id);
-      if (result.err) return result;
-      return new Ok(toEntity(result.val));
+    // FIND PRODUCT BY ID
+    findProductById: async (
+      catalogId: string,
+      id: string,
+      materialized: boolean = false
+    ): Promise<Result<Product, AppError>> => {
+      if (!!materialized === false) {
+        const result = await repo.findOne(catalogId, id);
+        if (result.err) return result;
+        return new Ok(toEntity(result.val));
+      } else {
+        const result = await repo.aggregate(catalogId, [
+          { $match: { _id: id } },
+          {
+            $lookup: {
+              from: server.db.col.product[catalogId].collectionName,
+              localField: '_id',
+              foreignField: 'parent',
+              as: 'variants'
+            }
+          },
+          {
+            $lookup: {
+              from: server.db.col.product[catalogId].collectionName,
+              localField: 'parent',
+              foreignField: '_id',
+              as: 'base'
+            }
+          }
+        ]);
+        if (result.err) return result;
+        const entity = result.val[0];
+        if (entity.isBase === true) {
+          delete entity.base;
+        } else {
+          if (!entity.name) entity.name = entity.base[0].name;
+          entity.searchKeywords.push(...entity.base[0].searchKeywords);
+          delete entity.base;
+          delete entity.variants;
+        }
+        return new Ok(toEntity(entity));
+      }
     },
 
-    // SAVE  CATEGORY
-    saveProduct: async (category: Product): Promise<Result<Product, AppError>> => {
-      const result = await repo.save(category);
+    // SAVE PRODUCT
+    saveProduct: async (catalogId: string, category: Product): Promise<Result<Product, AppError>> => {
+      const result = await repo.save(catalogId, category);
       if (result.err) return result;
       return new Ok(toEntity(result.val));
-    },
-
-    // VALIDATE
-    validate: async (id: string, data: any): Promise<Result<any, AppError>> => {
-      let schemaResult: Result<any, AppError> = await server.validator.getProductSchema(id);
-      if (!schemaResult.ok) return new Err(schemaResult.val);
-      const validation: Result<any, AppError> = server.validator.validate(schemaResult.val.jsonSchema, data);
-      if (!validation.ok) return new Err(validation.val);
-      return new Ok({ ok: true });
     }
   };
 };

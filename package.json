@@ -15,6 +15,7 @@
   },
   "license": "UNLICENSED",
   "devDependencies": {
+    "@faker-js/faker": "^8.2.0",
     "@shelf/jest-mongodb": "^4.1.6",
     "@types/jest": "^29.4.0",
     "@types/node": "^18.14.2",
@@ -47,6 +48,7 @@
     "fastify-print-routes": "^2.1.0",
     "json-predicate": "^0.9.5",
     "module-alias": "^2.2.2",
+    "mongo-update": "^1.1.0",
     "nanoid": "^3.3.4",
     "nodemon": "^3.0.1",
     "rimraf": "^5.0.5",

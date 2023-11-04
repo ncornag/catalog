@@ -22,7 +22,7 @@ const ProductCategoryResponse = Type.Composite([ProductCategorySchema], {
 // CREATE
 export const CreateProductCategoryBodySchema = Type.Omit(
   ProductCategorySchema,
-  ['id', 'ancestors', 'createdAt', 'updatedAt', 'version'],
+  ['id', 'ancestors', 'createdAt', 'lastModifiedAt', 'version'],
   {
     examples: [defaultExample],
     additionalProperties: false
