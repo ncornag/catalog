@@ -73,7 +73,7 @@ async function main() {
     }
   }
   if (updates.length > 0) {
-    await collection.insertMany(updates);
+    await collection.bulkWrite(updates);
   }
   let end = new Date().getTime();
   console.log(`Updated ${count} products in ${end - start} ms`);
