@@ -2,7 +2,7 @@ import { Db, Collection } from '@fastify/mongodb/node_modules/mongodb/mongodb';
 import { Ok, Err, Result } from 'ts-results';
 import { ErrorCode, AppError } from '@core/lib/appError';
 import { type IProductRepository } from '@core/repositories/product.repo';
-import { Product } from '@core/entities/product';
+import { Product, ProductType } from '@core/entities/product';
 import { ProductDAO } from '@infrastructure/repositories/dao/product.dao.schema';
 
 export const getProductCollection = async (
@@ -27,7 +27,7 @@ export class ProductRepository implements IProductRepository {
   async create(catalogId: string, product: Product): Promise<Result<ProductDAO, AppError>> {
     const { id: _id, ...data } = product;
     const productDAO = { _id, ...data };
-    if (productDAO.parent) productDAO.isBase = false;
+    if (productDAO.parent) productDAO.type = ProductType.VARIANT;
     const catAwareCol = this.col[catalogId];
     product.catalog = catalogId;
     const result = await catAwareCol.insertOne(productDAO);

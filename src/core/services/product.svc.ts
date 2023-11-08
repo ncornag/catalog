@@ -2,7 +2,7 @@ import { Err, Ok, Result } from 'ts-results';
 import { AppError, ErrorCode } from '@core/lib/appError';
 import { Value } from '@sinclair/typebox/value';
 import { nanoid } from 'nanoid';
-import { type Product, UpdateProductAction } from '@core/entities/product';
+import { type Product, UpdateProductAction, ProductType } from '@core/entities/product';
 import { type CreateProductBody } from '@infrastructure/http/schemas/product.schemas';
 import { ProductDAO } from '@infrastructure/repositories/dao/product.dao.schema';
 import { ActionHandlersList, actionHandlersList } from '@core/services/actions';
@@ -115,15 +115,36 @@ export const productService = (server: any): IProductService => {
               foreignField: '_id',
               as: 'base'
             }
+          },
+          {
+            $project: {
+              'variants.parent': 0,
+              'variants.catalog': 0,
+              'variants.projectId': 0,
+              'variants.createdAt': 0,
+              'variants.lastModifiedAt': 0,
+              'variants.version': 0
+            }
           }
         ]);
         if (result.err) return result;
         const entity = result.val[0];
-        if (entity.isBase === true) {
+        if (entity.type === ProductType.BASE) {
           delete entity.base;
-        } else {
-          if (!entity.name) entity.name = entity.base[0].name;
-          entity.searchKeywords.push(...entity.base[0].searchKeywords);
+        } else if (entity.type === ProductType.VARIANT) {
+          entity.inheritedFields = [];
+          if (!entity.name) {
+            entity.name = entity.base[0].name;
+            entity.inheritedFields.push('name');
+          }
+          if (entity.base[0].searchKeywords.length > 0) {
+            (entity.searchKeywords ?? (entity.searchKeywords = [])).concat(entity.base[0].searchKeywords);
+            entity.inheritedFields.push('searchKeywords');
+          }
+          if (entity.base[0].categories.length > 0) {
+            (entity.categories ?? (entity.categories = [])).concat(entity.base[0].categories);
+            entity.inheritedFields.push('categories');
+          }
           delete entity.base;
           delete entity.variants;
         }

@@ -7,7 +7,8 @@ export enum ClassificationAttributeBaseType {
   DATETIME = 'datetime',
   BOOLEAN = 'boolean',
   ENUM = 'enum',
-  OBJECT = 'object'
+  OBJECT = 'object',
+  REFERENCE = 'reference'
 }
 
 // Other attribute types

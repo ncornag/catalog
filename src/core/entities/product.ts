@@ -33,6 +33,13 @@ export type UpdateProductChangeDescription = Static<typeof UpdateProductChangeDe
 export const UpdateProductAction = Type.Union([UpdateProductChangeDescriptionSchema, UpdateProductChangeNameSchema]);
 export type UpdateProductAction = Static<typeof UpdateProductAction>;
 
+// PRODUCT TYPES
+export enum ProductType {
+  BASE = 'base',
+  VARIANT = 'variant',
+  COMPOSITE = 'composite'
+}
+
 // ENTITY
 export const ProductSchema = Type.Object(
   {
@@ -45,7 +52,7 @@ export const ProductSchema = Type.Object(
     searchKeywords: Type.Array(Type.String(), { default: [] }),
     categories: Type.Array(Type.String(), { default: [] }),
     attributes: Type.Any({ default: {} }),
-    isBase: Type.Boolean({ default: true }), // Is this a base product or a variant?
+    type: Type.Enum(ProductType), // BASE, VARIANT, COMPOSITE...
     parent: Type.String({ default: '' }), // If this is a variant, the parent product id
     status: Type.Optional(Type.String()), // Active, Inactive... Approved, Pending, Rejected
     original: Type.Optional(Type.Any()), // The original product before any changes

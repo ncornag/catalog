@@ -280,7 +280,7 @@ db.ProductStage.insertMany([
     slug: "adizero-prime-x-2-strung-running-shoes",
     searchKeywords: ["adizero", "prime", "x", "2", "strung", "running", "shoes"],
     categories: ["shoes"],
-    isBase: true
+    type: "base"
   },
   {
     _id: "adizeroPrimeX2-White-001",
@@ -289,6 +289,7 @@ db.ProductStage.insertMany([
     name: "ADIZERO PRIME X 2 STRUNG RUNNING SHOES WHITE!!!", // Overwrited name
     sku: "HP9708_570",
     searchKeywords: ["white"], // Added new keywords
+    type: "variant",
     parent: "adizeroPrimeX2-base",
     attributes: {
       color: "Cloud White",
@@ -300,6 +301,7 @@ db.ProductStage.insertMany([
     projectId: 'TestProject',
     catalog: "stage",
     sku: "HP9708_580",
+    type: "variant",
     parent: "adizeroPrimeX2-base",
     attributes: {
       color: "Cloud White",
@@ -311,10 +313,136 @@ db.ProductStage.insertMany([
     projectId: 'TestProject',
     catalog: "stage",
     sku: "HP9709_580",
+    type: "variant",
     parent: "adizeroPrimeX2-base",
     attributes: {
       color: "Core Black",
       size: "M 6.5/W 7.5"
     }
   }
+])
+
+// Insert Composite Products
+db.ProductStage.insertMany([
+  // "Dynamic" Options (Other products)
+  {
+    _id: "full-frame-mirrorless-camera-kit",
+    projectId: 'TestProject',
+    catalog: "stage",
+    name: "Full Frame Mirrorless Camera Kit",
+    description: "Whatever you shoot, this kit lets you be creative ...",
+    slug: "full-frame-mirrorless-camera-kit",
+    searchKeywords: ["mirrorless", "full-frame", "kit"],
+    categories: ["mirrorless"],
+    type: "composite",
+    components: [
+      {
+        label: "1. Camera Body",
+        key: "camera-body",
+        type: "list",
+        elementType: "reference",
+        referenceType: "category",
+        min: 1,
+        max: 1,
+        references: [
+          {
+            category: "mirrorless",
+            exceptions: ["canon-eos-r3"]
+          },
+          {
+            product: "canon-eos-r5"
+          },
+          {
+            product: "canon-eos6-mark-ii"
+          }
+        ]
+      },
+      {
+        label: "2. Lens",
+        key: "lens",
+        type: "list",
+        elementType: "reference",
+        referenceType: "category",
+        min: 1,
+        max: 1,
+        references: [{ category: "ef-lens" }, { category: "rf-lens" }]
+      },
+      {
+        label: "3. Memory Card",
+        key: "memory-card",
+        type: "list",
+        elementType: "reference",
+        referenceType: "category",
+        min: 1,
+        max: 1,
+        references: [{ category: "sdxc-memory-cards"}]
+      },
+      {
+        label: "4. Accesories",
+        key: "accesories",
+        type: "list",
+        elementType: "reference",
+        referenceType: "category",
+        min: 0, // 0 makes buying the accesories optional
+        max: 5, // 5 is the maximum number of accesories that can be added
+        references: [{ category: "accesories"}]
+      }
+    ]
+  },
+  // "Static" Options
+  {
+    _id: "wood-business-card",
+    projectId: 'TestProject',
+    catalog: "stage",
+    name: "Modern wood business card",
+    description: "Modern wood grain look professional carpenter logo business card",
+    slug: "modern-wood-business-card",
+    searchKeywords: ["cards"],
+    categories: ["cards"],
+    type: "composite",
+    components: [
+      {
+        label: "Design Theme",
+        key: "design-theme",
+        type: "enum",
+        options: [
+          { key: "B", label: "Black Theme" },
+          { key: "W", label: "White Theme" }
+        ]
+      },
+      {
+        label: "Size",
+        key: "size",
+        type: "enum",
+        options: [
+          { key: "S", label: "Standard, 3.5 x 2.0" },
+          { key: "M", label: "Mini, 3.0 x 1.0" },
+          { key: "E", label: "Euro, 3.346 x 2.165" }
+        ]
+      },
+      {
+        label: "Paper",
+        key: "paper",
+        type: "enum",
+        options: [
+          { key: "S1", label: "Standard Matte" }, // TODO: Add media. Maybe also as new attribute type?
+          { key: "S2", label: "Standard Semi-Gloss" },
+          { key: "SG", label: "Signature UV Gloss" }
+        ]
+      },
+      {
+        label: "First Line",
+        key: "first-line",
+        type: "text",
+        minLength: 1,
+        maxLength: 20
+      },
+      {
+        label: "Second Line",
+        key: "second-line",
+        type: "text"
+      }
+    ]
+  }
+
 ])

@@ -6,8 +6,10 @@
 - [X] Separate base/variants in their own documents
 - [X] Separate stage/online (Catalogs)
 - [X] Add Catalog sync
+- [X] AuditLog
 - [ ] User defined Product relations (upsell, crossell..)
 - [ ] Reference expansions
+- [ ] Search
 
 from https://miro.com/app/board/uXjVMFprX3M=/
 
@@ -16,7 +18,7 @@ from https://miro.com/app/board/uXjVMFprX3M=/
 - Product groups (labels?)
   - Variants groups (?)
 - Attribute groups
-- Composite products (Pizza, cars)
+- Composite products (Pizza, cars, presentation cards)
 - Storing variants and products separately will make querying products more difficult (AQ problem will be back) (AQ problem?)
 - Other ways of adding data to product than attributes (?)
 - Store-based category trees and categorization of products
@@ -35,3 +37,4 @@ from https://miro.com/app/board/uXjVMFprX3M=/
 - Import/export
 - Sizes conversion
 - Prices
+- Discounts

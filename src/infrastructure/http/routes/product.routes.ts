@@ -68,7 +68,6 @@ export default <FastifyPluginAsync>async function (server: FastifyInstance, opts
       request: FastifyRequest<{ Params: FindProductParms; Querystring: FindProductQueryString }>,
       reply: FastifyReply
     ) => {
-      console.log(request.query);
       const result: Result<Product, AppError> = await service.findProductById(
         request.query.catalog,
         request.params.id,
