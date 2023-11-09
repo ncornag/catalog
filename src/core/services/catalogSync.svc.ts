@@ -10,7 +10,7 @@ import { ICatalogSyncRepository } from '@core/repositories/catalogSync.repo';
 import { UpdateEntityActionsRunner } from '@core/lib/updateEntityActionsRunner';
 import { ChangeNameActionHandler } from './actions/changeName.handler';
 import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler';
-import { ProductDAO } from '@infrastructure/repositories/dao/product.dao.schema';
+import { Queue, Worker, Job } from 'bullmq';
 var patch = require('mongo-update');
 
 // SERVICE INTERFACE
@@ -19,7 +19,7 @@ interface ICatalogSyncService {
   updateCatalogSync: (id: string, version: number, actions: any) => Promise<Result<CatalogSync, AppError>>;
   findCatalogSyncById: (id: string) => Promise<Result<CatalogSync, AppError>>;
   saveCatalogSync: (category: CatalogSync) => Promise<Result<CatalogSync, AppError>>;
-  syncCatalogs: (payload: SyncCatalogBody) => Promise<Result<boolean, AppError>>;
+  syncCatalogs: (payload: SyncCatalogBody) => Promise<Result<string, AppError>>;
 }
 
 const toEntity = ({ _id, ...remainder }: CatalogSyncDAO): CatalogSync => ({
@@ -62,6 +62,80 @@ export const catalogSyncService = (server: any): ICatalogSyncService => {
   };
   const repo = server.db.repo.catalogSyncRepository as ICatalogSyncRepository;
   const actionsRunner = new UpdateEntityActionsRunner<CatalogSyncDAO, ICatalogSyncRepository>();
+  const logCount = 1000;
+  const productUpdatesQueue = new Queue('productUpdates', {
+    connection: {
+      host: 'localhost',
+      port: 6379
+    }
+  });
+  const worker = new Worker(
+    'productUpdates',
+    async (job: Job) => {
+      let start = new Date().getTime();
+      const sourceCol = server.db.col.product[job.data.sourceCatalog];
+      const targetCol = server.db.col.product[job.data.targetCatalog];
+      let updates = [];
+
+      const productsToUpdate = await sourceCol.find({
+        _id: {
+          $in: job.data.products
+        }
+      });
+
+      for await (const product of productsToUpdate) {
+        const targetProductResult = await targetCol.find({ _id: product._id }).toArray();
+        if (targetProductResult.length === 1) {
+          // Product exists, generate update
+          const update = patch(targetProductResult[0], product, {
+            version: 0,
+            createdAt: 0,
+            lastModifiedAt: 0,
+            catalog: 0
+          });
+          if (update.$set) {
+            updates.push({
+              updateOne: {
+                filter: { _id: product._id, version: targetProductResult[0].version },
+                update: update
+              }
+            });
+          }
+        } else if (targetProductResult.length === 0 && job.data.createNewItems === true) {
+          // Product desn't exist, generate the insert if configured to do so in the sync
+          product.catalog = job.data.targetCatalog;
+          delete product.version;
+          delete product.createdAt;
+          delete product.lastModifiedAt;
+          updates.push({
+            insertOne: {
+              document: product
+            }
+          });
+        }
+      }
+      const result = await targetCol.bulkWrite(updates);
+      let end = new Date().getTime();
+      return { count: job.data.products.length, time: end - start };
+    },
+    {
+      concurrency: 1000,
+      connection: {
+        host: 'localhost',
+        port: 6379
+      }
+    }
+  );
+  worker.on('completed', (job: Job) => {
+    console.log(`${job.id} has completed! ${job.returnvalue.count} products updated in ${job.returnvalue.time} ms`);
+  });
+  worker.on('failed', (job: Job, err) => {
+    console.log(`${job.id} has failed with ${err.message}`);
+  });
+  process.on('SIGINT', async () => {
+    await worker.close();
+  });
+
   return {
     // CREATE CATALOGSYNC
     createCatalogSync: async (payload: CreateCatalogSyncBody): Promise<Result<CatalogSync, AppError>> => {
@@ -130,100 +204,86 @@ export const catalogSyncService = (server: any): ICatalogSyncService => {
     },
 
     // SYNC CATALOGSYNC
-    syncCatalogs: async (payload: SyncCatalogBody): Promise<Result<boolean, AppError>> => {
+    syncCatalogs: async (payload: SyncCatalogBody): Promise<Result<string, AppError>> => {
       // Find the Sync
       const catalogSyncResult = await repo.findOne(payload.id);
       if (catalogSyncResult.err) return catalogSyncResult;
+
       // Sync configuration
       const createNewItems = catalogSyncResult.val.createNewItems;
       const removeNonExistent = catalogSyncResult.val.removeNonExistent;
+
       // Hold the source and target catalogs
       const sourceCatalog = catalogSyncResult.val.sourceCatalog;
       const targetCatalog = catalogSyncResult.val.targetCatalog;
       const sourceCol = server.db.col.product[sourceCatalog];
-      const targetCol = server.db.col.product[targetCatalog];
+
       // Loop the source catalog products and sync them to the target catalog
       server.log.info(
         `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], start`,
         catalogSyncResult.val.lastSync
       );
-      const productsToUpdate = await sourceCol.find({
-        $or: [
-          { createdAt: { $gte: catalogSyncResult.val.lastSync } },
-          { lastModifiedAt: { $gte: catalogSyncResult.val.lastSync } }
-        ]
-      });
+      const productsToUpdate = await sourceCol.find(
+        {
+          $or: [
+            { createdAt: { $gte: catalogSyncResult.val.lastSync } },
+            { lastModifiedAt: { $gte: catalogSyncResult.val.lastSync } }
+          ]
+        },
+        { projection: { _id: 1 } }
+      );
       let count = 0;
       let start = new Date().getTime();
-      let updates = [];
+      let products = [];
       for await (const product of productsToUpdate) {
-        const productId = product._id;
-        const targetProductResult = await targetCol.find({ _id: productId }).toArray();
-        if (targetProductResult.length === 1) {
-          // Product exists, update
-          const update = patch(targetProductResult[0], product, {
-            version: 0,
-            createdAt: 0,
-            lastModifiedAt: 0,
-            catalog: 0
+        products.push(product._id);
+        count = count + 1;
+        if (count % logCount === 0 && count > 0) {
+          await productUpdatesQueue.add('updateProduct', {
+            products,
+            sourceCatalog,
+            targetCatalog,
+            createNewItems,
+            removeNonExistent
           });
-          if (update.$set) {
-            const u = {
-              updateOne: {
-                filter: { _id: productId, version: targetProductResult[0].version },
-                update: update
-              }
-            };
-            updates.push(u);
-            count = count + 1;
-          }
-        } else if (targetProductResult.length === 0) {
-          // Product desn't exist, insert if configured to do so in the sync
-          if (createNewItems === true) {
-            product.catalog = targetCatalog;
-            delete product.version;
-            delete product.createdAt;
-            delete product.lastModifiedAt;
-            const u = {
-              insertOne: {
-                document: product
-              }
-            };
-            updates.push(u);
-            count = count + 1;
-          }
-        }
-        if (count % 1000 === 0 && count > 0) {
-          const result = await targetCol.bulkWrite(updates);
           let end = new Date().getTime();
           server.log.info(
-            `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], updated ${count} products in ${
+            `Syncing catalog [${sourceCatalog}] to [${targetCatalog}], reading ${count} products to update in ${
               end - start
             } ms`
           );
           start = new Date().getTime();
-          updates = [];
+          products = [];
         }
       }
-      if (count > 0) {
-        const result = await targetCol.bulkWrite(updates);
+      if (products.length > 0) {
+        await productUpdatesQueue.add('updateProduct', {
+          products,
+          sourceCatalog,
+          targetCatalog,
+          createNewItems,
+          removeNonExistent
+        });
+        let end = new Date().getTime();
+        server.log.info(
+          `Syncing catalog [${sourceCatalog}] to [${targetCatalog}], reading ${count} products to update in ${
+            end - start
+          } ms`
+        );
       }
-      let end = new Date().getTime();
-      server.log.info(
-        `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], updated ${count} products in ${
-          end - start
-        } ms`
-      );
+
       // TODO: Remove non existent products in target if configured to do so in the sync
       if (removeNonExistent === true) {
+        // This is a very expensive operation...
       }
-      end = new Date().getTime();
-      server.log.info(`Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], end in ${end - start} ms`);
+
+      // Update CatalogSync lastSync
       const result = await repo.updateOne(catalogSyncResult.val._id, catalogSyncResult.val.version!, {
         $set: { lastSync: new Date().toISOString() }
       });
       if (result.err) return result;
-      return new Ok(true);
+
+      return new Ok('Done adding products to the update queue');
     }
   };
 };
