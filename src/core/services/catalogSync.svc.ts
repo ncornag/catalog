@@ -62,6 +62,7 @@ export const catalogSyncService = (server: any): ICatalogSyncService => {
   };
   const repo = server.db.repo.catalogSyncRepository as ICatalogSyncRepository;
   const actionsRunner = new UpdateEntityActionsRunner<CatalogSyncDAO, ICatalogSyncRepository>();
+  const batchSize = 1000;
   return {
     // CREATE CATALOGSYNC
     createCatalogSync: async (payload: CreateCatalogSyncBody): Promise<Result<CatalogSync, AppError>> => {
@@ -177,48 +178,51 @@ export const catalogSyncService = (server: any): ICatalogSyncService => {
             updates.push(u);
             count = count + 1;
           }
-        } else if (targetProductResult.length === 0) {
+        } else if (targetProductResult.length === 0 && createNewItems === true) {
           // Product desn't exist, insert if configured to do so in the sync
-          if (createNewItems === true) {
-            product.catalog = targetCatalog;
-            delete product.version;
-            delete product.createdAt;
-            delete product.lastModifiedAt;
-            const u = {
-              insertOne: {
-                document: product
-              }
-            };
-            updates.push(u);
-            count = count + 1;
-          }
+          product.catalog = targetCatalog;
+          delete product.version;
+          delete product.createdAt;
+          delete product.lastModifiedAt;
+          const u = {
+            insertOne: {
+              document: product
+            }
+          };
+          updates.push(u);
+          count = count + 1;
         }
-        if (count % 1000 === 0 && count > 0) {
+        if (count % batchSize === 0 && count > 0) {
           const result = await targetCol.bulkWrite(updates);
           let end = new Date().getTime();
           server.log.info(
-            `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], updated ${count} products in ${
-              end - start
-            } ms`
+            `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], updated ${count} products at ${(
+              (batchSize * 1000) /
+              (end - start)
+            ).toFixed()} products/second`
           );
           start = new Date().getTime();
           updates = [];
         }
       }
-      if (count > 0) {
+      if (updates.length > 0) {
         const result = await targetCol.bulkWrite(updates);
+        let end = new Date().getTime();
+        server.log.info(
+          `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], updated ${count} products at ${(
+            (batchSize * 1000) /
+            (end - start)
+          ).toFixed()} products/second`
+        );
       }
-      let end = new Date().getTime();
-      server.log.info(
-        `Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], updated ${count} products in ${
-          end - start
-        } ms`
-      );
+
       // TODO: Remove non existent products in target if configured to do so in the sync
       if (removeNonExistent === true) {
       }
-      end = new Date().getTime();
-      server.log.info(`Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], end in ${end - start} ms`);
+
+      server.log.info(`Syncing catalog [${sourceCatalog}] to catalog [${targetCatalog}], end`);
+
+      // Update the last sync time
       const result = await repo.updateOne(catalogSyncResult.val._id, catalogSyncResult.val.version!, {
         $set: { lastSync: new Date().toISOString() }
       });
