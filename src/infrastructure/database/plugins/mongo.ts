@@ -61,65 +61,99 @@ export default fp(async function (server: FastifyInstance) {
   );
 
   // Iterceptor targets
-  const pidTargets: string[] = ['find', 'insertOne', 'updateOne', 'updateMany'];
-  const insertTargets: string[] = ['insertOne'];
-  const updateTargets: string[] = ['updateOne', 'updateMany'];
+  const projectIdTargets: string[] = ['find', 'insertOne', 'updateOne', 'updateMany', 'bulkWrite'];
+  const createTargets: string[] = ['insertOne'];
+  const updateTargets: string[] = ['updateOne', 'updateMany', 'bulkWrite'];
 
-  // Interceptor -- Force projectId in find & updates
-  const pidInterceptor: Function = function (obj: any, replace: Function, name: string) {
+  // ProjectId Interceptor -- Force projectId in find & updates
+  const projectIdOne = function (data: any) {
+    // Add projectId
+    const projectId = requestContext.get(PROJECT_ID_STORE_KEY) || 'TestProject';
+    data.projectId = projectId;
+    return data;
+  };
+  const projectIdInterceptor: Function = function (obj: any, replace: Function, name: string) {
     obj.prototype[name] = function (...args: any[]) {
-      // Add projectId
-      const projectId = requestContext.get(PROJECT_ID_STORE_KEY) || 'TestProject';
-      args[0].projectId = projectId;
+      if (Array.isArray(args[0])) {
+        args[0] = args[0].map((a) => {
+          if (a.updateOne) {
+            return { updateOne: { filter: projectIdOne(a.updateOne.filter), update: a.updateOne.update } };
+          } else if (a.insertOne) {
+            return { insertOne: { document: projectIdOne(a.insertOne.document) } };
+          }
+          return a;
+        });
+      } else {
+        projectIdOne(args[0]);
+      }
       // console.log(name, 'pidInterceptor');
       // console.log(JSON.stringify(args, null, 2));
       return replace.apply(this, args as any);
     };
   };
 
-  // Interceptor -- Create timestamp / version
-  const insertInterceptor: Function = function (obj: any, replace: Function, name: string) {
+  // Create Interceptor -- Create timestamp / version
+  const createOne = function (data: any) {
+    // Add timestamp
+    data.createdAt = new Date().toISOString();
+    // Add version
+    data.version = 0;
+    return data;
+  };
+  const createInterceptor: Function = function (obj: any, replace: Function, name: string) {
     obj.prototype[name] = function (...args: any[]) {
-      // Add timestamp
-      args[0].createdAt = new Date().toISOString();
-      // Add version
-      args[0].version = 0;
+      createOne(args[0]);
       // console.log(name, 'insertInterceptor');
-      // console.log(JSON.stringify(args, null, 2));
+      // console.log(JSON.stringify(args[0], null, 2));
       return replace.apply(this, args as any);
     };
   };
 
-  // Interceptor -- Update timestamp / version
+  // Update Interceptor -- Update timestamp / version
+  const updateOne = function (filter: any, update: any) {
+    const set = update.$set || {};
+    const inc = update.$inc || {};
+    // Version management
+    const setVersion = set.version || 0;
+    if (filter.version === undefined) {
+      filter.version = setVersion;
+    }
+    delete set.version;
+    // Update Timestamp
+    set.lastModifiedAt = new Date().toISOString(); // TODO use server date?
+    update.$set = set;
+    // Update Version
+    inc.version = 1;
+    update.$inc = inc;
+    return { filter, update };
+  };
   const updateInterceptor: Function = function (obj: any, replace: Function, name: string) {
     obj.prototype[name] = function (...args: any[]) {
-      // console.log(name, 'updateInterceptor, original values:');
+      // console.log(name, 'updateInterceptor, before');
       // console.log(JSON.stringify(args, null, 2));
-      const filter = args[0];
-      const update = args[1];
-      const set = update.$set || {};
-      const inc = update.$inc || {};
-      // Version management
-      const setVersion = set.version || 0;
-      if (filter.version === undefined) {
-        filter.version = setVersion;
+      if (Array.isArray(args[0])) {
+        args[0] = args[0].map((a) => {
+          if (a.updateOne) {
+            return { updateOne: updateOne(a.updateOne.filter, a.updateOne.update) };
+          } else if (a.insertOne) {
+            return { insertOne: { document: createOne(a.insertOne.document) } };
+          }
+          return a;
+        });
+      } else {
+        updateOne(args[0], args[1]);
       }
-      delete set.version;
-      // Update Timestamp
-      set.lastModifiedAt = new Date().toISOString(); // TODO use server date?
-      update.$set = set;
-      // Update Version
-      inc.version = 1;
-      update.$inc = inc;
-      // console.log(name, 'updateInterceptor, updated values:');
+      // console.log(name, 'updateInterceptor');
       // console.log(JSON.stringify(args, null, 2));
       return replace.apply(this, args as any);
     };
   };
 
   // Intercept
-  pidTargets.forEach((m: string) => pidInterceptor(Collection, (Collection.prototype as any)[m] as Function, m));
-  insertTargets.forEach((m: string) => insertInterceptor(Collection, (Collection.prototype as any)[m] as Function, m));
+  projectIdTargets.forEach((m: string) =>
+    projectIdInterceptor(Collection, (Collection.prototype as any)[m] as Function, m)
+  );
+  createTargets.forEach((m: string) => createInterceptor(Collection, (Collection.prototype as any)[m] as Function, m));
   updateTargets.forEach((m: string) => updateInterceptor(Collection, (Collection.prototype as any)[m] as Function, m));
 
   // Register Collections
