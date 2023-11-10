@@ -41,6 +41,9 @@ export const productService = (server: any): IProductService => {
         ...payload
       } as Product);
       if (result.err) return result;
+      // Index the entity
+      server.search.client.collections('products').documents().upsert(result.val);
+      // Return new entity
       return new Ok(toEntity(result.val));
     },
 
@@ -83,7 +86,9 @@ export const productService = (server: any): IProductService => {
           });
         });
       }
-      // Return udated entity
+      // Index the entity
+      server.search.client.collections('products').documents().upsert(result.val);
+      // Return updated entity
       return Ok(toEntity(toUpdateEntity));
     },
 
@@ -156,6 +161,9 @@ export const productService = (server: any): IProductService => {
     saveProduct: async (catalogId: string, category: Product): Promise<Result<Product, AppError>> => {
       const result = await repo.save(catalogId, category);
       if (result.err) return result;
+      // Index the entity
+      server.search.client.collections('products').documents().upsert(result.val);
+      // Return updated entity
       return new Ok(toEntity(result.val));
     }
   };

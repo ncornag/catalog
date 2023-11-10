@@ -22,6 +22,7 @@ import productCategoryRoutes from '@infrastructure/http/routes/productCategory.r
 import productRoutes from '@infrastructure/http/routes/product.routes';
 import catalogRoutes from '@infrastructure/http/routes/catalog.routes';
 import catalogSyncRoutes from '@infrastructure/http/routes/catalogSync.routes';
+import typesense from '@infrastructure/search/plugins/typesense';
 
 export const createServer = async (): Promise<FastifyInstance> => {
   const environment = process.env.NODE_ENV ?? 'production';
@@ -86,6 +87,7 @@ export const createServer = async (): Promise<FastifyInstance> => {
   await server.register(docs);
   await server.register(rabbitmq);
   await server.register(mongo);
+  await server.register(typesense);
   await server.register(sendAppError);
   await server.register(fastifyRequestContext);
   await server.register(requestContextProvider, { projectId });

@@ -53,7 +53,8 @@
     "nodemon": "^3.0.1",
     "rimraf": "^5.0.5",
     "ts-results": "^3.3.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "typesense": "^1.7.2"
   },
   "_moduleAliases": {
     "@core": "dist/core",

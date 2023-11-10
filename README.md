@@ -7,10 +7,14 @@
 - [X] Separate stage/online (Catalogs)
 - [X] Add Catalog sync
 - [X] AuditLog
+- [X] Catalog Sync
 - [X] i18n Strings fields
+- [X] Search
+- [ ] Review Enum/List/Set attribute types
+- [ ] Images/Assets fields
+- [ ] Reference fields
 - [ ] User defined Product relations (upsell, crossell..)
 - [ ] Reference expansions
-- [ ] Search
 
 from https://miro.com/app/board/uXjVMFprX3M=/
 

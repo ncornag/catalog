@@ -28,7 +28,10 @@ const ConfigSchema = Type.Strict(
     RABBITMQ_USERNAME: Type.Optional(Type.String()),
     RABBITMQ_PASSWORD: Type.Optional(Type.String()),
     RABBITMQ_VIRTUAL_HOST: Type.Optional(Type.String()),
-    CACHE_JSON_SCHEMAS: Type.Boolean({ default: true })
+    CACHE_JSON_SCHEMAS: Type.Boolean({ default: true }),
+    TYPESENSE_HOST: Type.Optional(Type.String()),
+    TYPESENSE_PORT: Type.Optional(Type.String()),
+    TYPESENSE_API_KEY: Type.Optional(Type.String())
   })
 );
 
