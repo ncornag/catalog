@@ -280,7 +280,15 @@ db.ProductStage.insertMany([
     slug: "adizero-prime-x-2-strung-running-shoes",
     searchKeywords: ["adizero", "prime", "x", "2", "strung", "running", "shoes"],
     categories: ["shoes"],
-    type: "base"
+    type: "base",
+    assets: [ {
+      url : "https://commercetools.com/cli/data/253245821_1.jpg",
+      tags: ["image", "main", "800x500"]
+    }, {
+      label: "User Manual",
+      url : "https://commercetools.com/cli/data/manual.pdf",
+      tags: ["pdf"]
+    } ]
   },
   {
     _id: "adizeroPrimeX2-White-001",
