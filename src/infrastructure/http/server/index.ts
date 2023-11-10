@@ -20,6 +20,7 @@ import { updateChildAncestorsForIdService } from '@core/services/listeners/updat
 import classificationCategoryRoutes from '@infrastructure/http/routes/classificationCategory.routes';
 import productCategoryRoutes from '@infrastructure/http/routes/productCategory.routes';
 import productRoutes from '@infrastructure/http/routes/product.routes';
+import productRoutesV1 from '@infrastructure/http/routes/productV1.routes';
 import catalogRoutes from '@infrastructure/http/routes/catalog.routes';
 import catalogSyncRoutes from '@infrastructure/http/routes/catalogSync.routes';
 import typesense from '@infrastructure/search/plugins/typesense';
@@ -102,6 +103,7 @@ export const createServer = async (): Promise<FastifyInstance> => {
   await server.register(classificationCategoryRoutes, { prefix: '/classificationCategories' });
   await server.register(productCategoryRoutes, { prefix: '/productCategories' });
   await server.register(productRoutes, { prefix: '/products' });
+  await server.register(productRoutesV1, { prefix: '/v1/products' });
   await server.register(catalogRoutes, { prefix: '/catalog' });
   await server.register(catalogSyncRoutes, { prefix: '/catalogSync' });
 
