@@ -275,7 +275,7 @@ db.ProductStage.insertMany([
     _id: "adizeroPrimeX2-base",
     projectId: 'TestProject',
     catalog: "stage",
-    name: "ADIZERO PRIME X 2 STRUNG RUNNING SHOES",
+    name: { "en": "ADIZERO PRIME X 2 STRUNG RUNNING SHOES" },
     description: "Built with innovative technology and designed without ...",
     slug: "adizero-prime-x-2-strung-running-shoes",
     searchKeywords: ["adizero", "prime", "x", "2", "strung", "running", "shoes"],
@@ -286,7 +286,7 @@ db.ProductStage.insertMany([
     _id: "adizeroPrimeX2-White-001",
     projectId: 'TestProject',
     catalog: "stage",
-    name: "ADIZERO PRIME X 2 STRUNG RUNNING SHOES WHITE!!!", // Overwrited name
+    name: { "en": "ADIZERO PRIME X 2 STRUNG RUNNING SHOES WHITE!!!" }, // Overwrited name
     sku: "HP9708_570",
     searchKeywords: ["white"], // Added new keywords
     type: "variant",
@@ -329,7 +329,7 @@ db.ProductStage.insertMany([
     _id: "full-frame-mirrorless-camera-kit",
     projectId: 'TestProject',
     catalog: "stage",
-    name: "Full Frame Mirrorless Camera Kit",
+    name: { "en": "Full Frame Mirrorless Camera Kit" },
     description: "Whatever you shoot, this kit lets you be creative ...",
     slug: "full-frame-mirrorless-camera-kit",
     searchKeywords: ["mirrorless", "full-frame", "kit"],
@@ -394,7 +394,7 @@ db.ProductStage.insertMany([
     _id: "wood-business-card",
     projectId: 'TestProject',
     catalog: "stage",
-    name: "Modern wood business card",
+    name: { "en": "Modern wood business card" },
     description: "Modern wood grain look professional carpenter logo business card",
     slug: "modern-wood-business-card",
     searchKeywords: ["cards"],

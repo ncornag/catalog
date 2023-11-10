@@ -62,11 +62,15 @@ export const createServer = async (): Promise<FastifyInstance> => {
 
   // Global Error handler
   server.setErrorHandler(function (error, request, reply) {
+    console.log(JSON.stringify(error, null, 2));
     if (error.validation) {
       const additionalProperty = error.validation[0]?.params?.additionalProperty
         ? ' [' + error.validation[0]?.params?.additionalProperty + ']'
         : '';
-      const message = error.validation[0] ? error.validation[0].message + additionalProperty : error.message;
+      const instancePath = error.validation[0]?.instancePath ? ' [' + error.validation[0]?.instancePath + ']' : '';
+      const message = error.validation[0]
+        ? error.validation[0].message + instancePath + additionalProperty
+        : error.message;
       reply.send(new AppError(ErrorCode.UNPROCESSABLE_ENTITY, message));
     } else if (error.name == 'MongoServerError') {
       reply.send(new AppError(ErrorCode.BAD_REQUEST, errorName(error.code as any)));

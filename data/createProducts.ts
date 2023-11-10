@@ -1,4 +1,4 @@
-import { faker } from '@faker-js/faker';
+import { faker, fakerDE } from '@faker-js/faker';
 import { MongoClient } from 'mongodb';
 import { nanoid } from 'nanoid';
 
@@ -21,7 +21,7 @@ function createRandomProduct(projectId: string, catalog: string): any {
     _id: nanoid(),
     projectId,
     catalog,
-    name: faker.commerce.productName(),
+    name: { en: faker.commerce.productName(), de: fakerDE.commerce.productName() },
     description: faker.commerce.productDescription(),
     sku: faker.commerce.isbn(13),
     searchKeywords: searchKeywords(1, 3),

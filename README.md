@@ -7,6 +7,7 @@
 - [X] Separate stage/online (Catalogs)
 - [X] Add Catalog sync
 - [X] AuditLog
+- [X] i18n Strings fields
 - [ ] User defined Product relations (upsell, crossell..)
 - [ ] Reference expansions
 - [ ] Search

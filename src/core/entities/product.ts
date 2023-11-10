@@ -1,5 +1,5 @@
 import { AuditFields } from '@core/lib/auditFields';
-import { Type, type Static } from '@sinclair/typebox';
+import { Type, Static } from '@sinclair/typebox';
 
 // Action Types
 export enum ProductUpdateActionType {
@@ -7,13 +7,19 @@ export enum ProductUpdateActionType {
   CHANGEDESCRIPTION = 'changeDescription'
 }
 
+// Localized String
+const i18nKeyType = Type.Record(Type.String({ pattern: '^[a-z]{2}([_])?([A-Za-z]{2})?$' }), Type.String(), {
+  additionalProperties: false,
+  minProperties: 1
+});
+
 // ACTIONS
 
 // changeName action
 export const UpdateProductChangeNameSchema = Type.Object(
   {
     action: Type.Literal(ProductUpdateActionType.CHANGENAME),
-    name: Type.String()
+    name: i18nKeyType
   },
   { additionalProperties: false }
 );
@@ -45,7 +51,7 @@ export const ProductSchema = Type.Object(
   {
     id: Type.String(),
     catalog: Type.String(),
-    name: Type.String(),
+    name: i18nKeyType,
     description: Type.Optional(Type.String()),
     sku: Type.Optional(Type.String()), // Optional in the base product
     slug: Type.Optional(Type.String()), // Optional in the variants
