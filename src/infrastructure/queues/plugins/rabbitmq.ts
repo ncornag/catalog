@@ -71,4 +71,6 @@ export default fp(async function (server: FastifyInstance) {
       return server.rabbitMQProducer.publish(exchange, routingKey, content, options);
     }
   });
+
+  server.log.info(`Connected to RabbitMQ at [${rmq_host}:${rmq_port}]`);
 });
