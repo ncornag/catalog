@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 import { type AuditLog } from '@core/entities/auditLog';
 import { AuditLogDAO } from '@infrastructure/repositories/dao/auditLog.dao.schema';
 import { IAuditLogRepository } from '@core/repositories/auditLog.repo';
+import { JSONPath } from 'jsonpath-plus';
 
 // SERVICE INTERFACE
 export interface IAuditLogService {
@@ -54,7 +55,17 @@ export class AuditlogService implements IAuditLogService {
   // FIND AUDITLOGS
   public async findAuditLogs(catalogId: string): Promise<Result<AuditLog[], AppError>> {
     const result = await this.repo.find({ catalogId }, {});
+    const massagedResults = result.val.map((e: AuditLog) => {
+      if (e.edits == null) return e;
+      return {
+        ...e,
+        edits: e.edits.map((ed: any) => {
+          return { ...ed, oldValue: JSONPath({ path: '$.' + ed.path.replace(/\//g, '.'), json: e.source })[0] };
+        })
+      };
+    });
+
     if (result.err) return result;
-    return new Ok(result.val.map((entity) => toEntity(entity)));
+    return new Ok(massagedResults.map((e: AuditLogDAO) => toEntity(e)));
   }
 }

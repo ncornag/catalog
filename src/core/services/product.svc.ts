@@ -11,6 +11,7 @@ import { UpdateEntityActionsRunner } from '@core/lib/updateEntityActionsRunner';
 import { ChangeNameActionHandler } from './actions/changeName.handler';
 import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler';
 import { Config } from '@infrastructure/http/plugins/config';
+import { ChangeKeywordsActionHandler } from './actions/changeKeywords.handler';
 
 // SERVICE INTERFACE
 export interface IProductService {
@@ -39,7 +40,8 @@ export class ProductService implements IProductService {
     this.cols = server.db.col.product;
     this.actionHandlers = {
       changeName: new ChangeNameActionHandler(server),
-      changeDescription: new ChangeDescriptionActionHandler(server)
+      changeDescription: new ChangeDescriptionActionHandler(server),
+      changeKeywords: new ChangeKeywordsActionHandler(server)
     };
     this.actionsRunner = new UpdateEntityActionsRunner<ProductDAO, IProductRepository>();
     this.config = server.config;

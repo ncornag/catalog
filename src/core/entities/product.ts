@@ -4,7 +4,8 @@ import { Type, Static } from '@sinclair/typebox';
 // Action Types
 export enum ProductUpdateActionType {
   CHANGENAME = 'changeName',
-  CHANGEDESCRIPTION = 'changeDescription'
+  CHANGEDESCRIPTION = 'changeDescription',
+  CHANGEKEYWORDS = 'changeKeywords'
 }
 
 // Localized String
@@ -35,8 +36,22 @@ export const UpdateProductChangeDescriptionSchema = Type.Object(
 );
 export type UpdateProductChangeDescription = Static<typeof UpdateProductChangeDescriptionSchema>;
 
+// changeKeywords action
+export const UpdateProductChangeKeywordsSchema = Type.Object(
+  {
+    action: Type.Literal(ProductUpdateActionType.CHANGEKEYWORDS),
+    searchKeywords: Type.Array(Type.String())
+  },
+  { additionalProperties: false }
+);
+export type UpdateProductChangeKeywords = Static<typeof UpdateProductChangeKeywordsSchema>;
+
 // ACTION
-export const UpdateProductAction = Type.Union([UpdateProductChangeDescriptionSchema, UpdateProductChangeNameSchema]);
+export const UpdateProductAction = Type.Union([
+  UpdateProductChangeDescriptionSchema,
+  UpdateProductChangeNameSchema,
+  UpdateProductChangeKeywordsSchema
+]);
 export type UpdateProductAction = Static<typeof UpdateProductAction>;
 
 // PRODUCT TYPES

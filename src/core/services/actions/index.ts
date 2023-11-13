@@ -1,5 +1,6 @@
 import { SetKeyActionHandler } from './setKey.handler';
 import { ChangeNameActionHandler } from './changeName.handler';
+import { ChangeKeywordsActionHandler } from './changeKeywords.handler';
 import { ChangeParentActionHandler } from '@core/lib/tree';
 import { Result } from 'ts-results';
 import { AppError } from '@core/lib/appError';
@@ -26,7 +27,8 @@ export interface ActionHandlersList {
 export const actionHandlersList = (server: any): ActionHandlersList => ({
   setKey: new SetKeyActionHandler(server),
   changeName: new ChangeNameActionHandler(server),
-  changeParent: new ChangeParentActionHandler(server)
+  changeParent: new ChangeParentActionHandler(server),
+  changeKeywords: new ChangeKeywordsActionHandler(server)
 });
 
 export type ActionHandlerResult = { update: any; sideEffects?: any[] };

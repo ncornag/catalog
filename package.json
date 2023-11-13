@@ -47,6 +47,7 @@
     "fastify-plugin": "^4.5.0",
     "fastify-print-routes": "^2.1.0",
     "json-predicate": "^0.9.5",
+    "jsonpath-plus": "^7.2.0",
     "module-alias": "^2.2.2",
     "mongo-update": "^1.1.0",
     "nanoid": "^3.3.4",
