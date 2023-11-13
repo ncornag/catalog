@@ -98,7 +98,7 @@ export const catalogSyncService = (server: any): ICatalogSyncService => {
         toUpdateEntity.version = version + 1;
         // Send differences via messagging
         const messages = await server.messages; //rabbitMQProducer;
-        messages.publish(server.config.EXCHANGE, server.config.AUDITLOG_ROUTE, {
+        messages.publish(server.config.EXCHANGE, server.config.ENTITY_UPDATE_ROUTE, {
           entity: 'catalogSync',
           source: entity,
           difference,

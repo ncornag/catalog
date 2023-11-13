@@ -16,6 +16,7 @@ import { requestContextProvider, getRequestIdFastifyAppConfig } from '@infrastru
 import { AppError, ErrorCode } from '@core/lib/appError';
 import { errorName } from '@infrastructure/database/mongoErrors';
 import { auditLogService } from '@core/services/listeners/auditLog.svc';
+import { searchService } from '@core/services/listeners/search.svc';
 import { updateChildAncestorsForIdService } from '@core/services/listeners/updateChildAncestorsForId.svc';
 import classificationCategoryRoutes from '@infrastructure/http/routes/classificationCategory.routes';
 import productCategoryRoutes from '@infrastructure/http/routes/productCategory.routes';
@@ -109,6 +110,7 @@ export const createServer = async (): Promise<FastifyInstance> => {
 
   // Load Services
   auditLogService(server);
+  searchService(server);
   updateChildAncestorsForIdService(server);
 
   await server.ready();

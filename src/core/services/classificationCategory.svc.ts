@@ -99,7 +99,7 @@ export const classificationCategoryService = (server: any): IClassificationCateg
         toUpdateEntity.version = version + 1;
         // Send differences via messagging
         const messages = await server.messages;
-        messages.publish(server.config.EXCHANGE, server.config.AUDITLOG_ROUTE, {
+        messages.publish(server.config.EXCHANGE, server.config.ENTITY_UPDATE_ROUTE, {
           entity: 'classificationCategory',
           source: entity,
           difference,

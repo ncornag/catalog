@@ -1,8 +1,6 @@
 import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
 import { Client } from 'typesense';
-import { requestContext } from '@fastify/request-context';
-import { REQUEST_ID_STORE_KEY, PROJECT_ID_STORE_KEY } from '@infrastructure/http/plugins/requestContext';
 
 declare module 'fastify' {
   export interface FastifyInstance {
@@ -41,7 +39,7 @@ export default fp(async function (server: FastifyInstance) {
     enable_nested_fields: true
   };
 
-  //await client.collections('products').delete();
+  await client.collections('products').delete();
   await client
     .collections('products')
     .retrieve()

@@ -41,8 +41,16 @@ export const productService = (server: any): IProductService => {
         ...payload
       } as Product);
       if (result.err) return result;
-      // Index the entity
-      server.search.client.collections('products').documents().upsert(result.val);
+      // Send new entity via messagging
+      const messages = await server.messages;
+      messages.publish(server.config.EXCHANGE, server.config.ENTITY_UPDATE_ROUTE, {
+        source: toEntity(result.val),
+        metadata: {
+          catalogId,
+          type: 'entityInsert',
+          entity: 'product'
+        }
+      });
       // Return new entity
       return new Ok(toEntity(result.val));
     },
@@ -70,13 +78,15 @@ export const productService = (server: any): IProductService => {
         if (saveResult.err) return saveResult;
         toUpdateEntity.version = version + 1;
         // Send differences via messagging
-        const messages = await server.messages; //rabbitMQProducer;
-        messages.publish(server.config.EXCHANGE, server.config.AUDITLOG_ROUTE, {
-          entity: 'product',
-          catalogId,
-          source: entity,
+        const messages = await server.messages;
+        messages.publish(server.config.EXCHANGE, server.config.ENTITY_UPDATE_ROUTE, {
+          source: toEntity(result.val),
           difference,
-          metadata: { type: 'entityUpdate' }
+          metadata: {
+            catalogId,
+            type: 'entityUpdate',
+            entity: 'product'
+          }
         });
         // Send side effects via messagging
         actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
@@ -86,8 +96,6 @@ export const productService = (server: any): IProductService => {
           });
         });
       }
-      // Index the entity
-      server.search.client.collections('products').documents().upsert(result.val);
       // Return updated entity
       return Ok(toEntity(toUpdateEntity));
     },

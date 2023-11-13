@@ -80,7 +80,7 @@ export const productCategoryService = (server: any): IProductCategoryService => 
         toUpdateEntity.version = version + 1;
         // Send differences via messagging
         const messages = await server.messages; //rabbitMQProducer;
-        messages.publish(server.config.EXCHANGE, server.config.AUDITLOG_ROUTE, {
+        messages.publish(server.config.EXCHANGE, server.config.ENTITY_UPDATE_ROUTE, {
           entity: 'productCategory',
           source: entity,
           difference,

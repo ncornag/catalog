@@ -3,7 +3,8 @@ import { green, red, magenta, yellow, bold } from 'kolorist';
 const msgIn = bold(yellow('←')) + yellow('MSG:');
 
 const handler = async (data: any, server: any) => {
-  server.log.debug(`${magenta('#' + data.metadata.requestId || '')} ${msgIn} auditLog ${green(JSON.stringify(data))}`);
+  server.log.debug(`${magenta('#' + data.metadata.requestId || '')} ${msgIn} auditLog ${green(data.source.id)}`);
+  const col = server.db.col.auditLog[data.source.projectId];
 };
 
 export class AuditLogService {
@@ -13,13 +14,13 @@ export class AuditLogService {
   }
   start() {
     this.server.log.info(
-      `${magenta('#')}  ${yellow('AuditLogService')} ${green('starting in')} ${this.server.config.AUDITLOG_ROUTE}/${
-        this.server.config.AUDITLOG_QUEUE
-      }`
+      `${magenta('#')}  ${yellow('AuditLogService')} ${green('starting in')} ${
+        this.server.config.ENTITY_UPDATE_ROUTE
+      }/${this.server.config.AUDITLOG_QUEUE}`
     );
     this.server.messages.subscribe(
       {
-        routingKey: this.server.config.AUDITLOG_ROUTE,
+        routingKey: this.server.config.ENTITY_UPDATE_ROUTE,
         queue: {
           exclusive: true,
           autoDelete: true,

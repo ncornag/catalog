@@ -52,7 +52,7 @@ export const productService = (server: any): IProductServiceV1 => {
         version: entity.version,
         // TODO: Get the first Classification Category of the first Product Category
         productType: {
-          id: 'xxx',
+          id: 'xxx-yyy-zzz',
           typeId: 'product-type'
         },
         // Unsupported right now, faking data
@@ -74,7 +74,12 @@ export const productService = (server: any): IProductServiceV1 => {
             slug: {
               en: entity.slug
             },
-            searchKeywords: entity.searchKeywords,
+            // TODO: Do it right when searchKeywords supports locale, assuming "en"
+            searchKeywords: {
+              en: entity.searchKeywords.map((k: any) => {
+                return { text: k };
+              })
+            },
             masterVariant: {
               id: entity.variants[0].id,
               sku: entity.variants[0].sku,
