@@ -12,12 +12,12 @@ import {
   ClassificationAttributePayload,
   postClassificationAttributeSchema
 } from '../schemas/classificationAttribute.schemas';
-import { classificationCategoryService } from '@core/services/classificationCategory.svc';
+import { ClassificationCategoryService } from '@core/services/classificationCategory.svc';
 import { ClassificationCategory } from '@core/entities/classificationCategory';
 import { ClassificationAttribute } from '@core/entities/classificationAttribute';
 
 export default <FastifyPluginAsync>async function (server: FastifyInstance, opts: FastifyPluginOptions) {
-  let service = classificationCategoryService(server);
+  let service = ClassificationCategoryService.getInstance(server);
 
   // CREATE
   server.route({

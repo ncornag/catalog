@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
 import { Result } from 'ts-results';
 import { AppError } from '@core/lib/appError';
-import { catalogSyncService } from '@core/services/catalogSync.svc';
+import { CatalogSyncService } from '@core/services/catalogSync.svc';
 import {
   syncCatalogSchema,
   SyncCatalogBody,
@@ -14,7 +14,7 @@ import {
 import { CatalogSync } from '@core/entities/catalogSync';
 
 export default <FastifyPluginAsync>async function (server: FastifyInstance, opts: FastifyPluginOptions) {
-  let service = catalogSyncService(server);
+  let service = CatalogSyncService.getInstance(server);
 
   // SYNC
   server.route({

@@ -1,13 +1,24 @@
 import { green, red, magenta, yellow, bold } from 'kolorist';
+import { IAuditLogService, AuditlogService } from '../auditLog.svc';
 
 const msgIn = bold(yellow('←')) + yellow('MSG:');
+let service: IAuditLogService;
 
 const handler = async (data: any, server: any) => {
-  server.log.debug(`${magenta('#' + data.metadata.requestId || '')} ${msgIn} auditLog ${green(data.source.id)}`);
-  const col = server.db.col.auditLog[data.source.projectId];
+  server.log.debug(
+    `${magenta('#' + data.metadata.requestId || '')} ${msgIn} auditLog indexing ${green(data.source.id)}`
+  );
+  service.createAuditLog({
+    entity: data.metadata.entity,
+    entityId: data.source.id,
+    catalogId: data.metadata.catalogId,
+    updateType: data.metadata.type,
+    source: data.source,
+    edits: data.difference
+  });
 };
 
-export class AuditLogService {
+export class AuditLogListener {
   private server: any;
   constructor(server: any) {
     this.server = server;
@@ -42,6 +53,7 @@ export class AuditLogService {
   }
 }
 
-export const auditLogService = (server: any) => {
-  return new AuditLogService(server).start();
+export const auditLogListener = (server: any) => {
+  service = AuditlogService.getInstance(server);
+  return new AuditLogListener(server).start();
 };

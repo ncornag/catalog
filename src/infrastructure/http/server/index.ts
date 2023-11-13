@@ -15,15 +15,16 @@ import attributesValidator from '@infrastructure/http/plugins/attributesValidato
 import { requestContextProvider, getRequestIdFastifyAppConfig } from '@infrastructure/http/plugins/requestContext';
 import { AppError, ErrorCode } from '@core/lib/appError';
 import { errorName } from '@infrastructure/database/mongoErrors';
-import { auditLogService } from '@core/services/listeners/auditLog.svc';
-import { searchService } from '@core/services/listeners/search.svc';
-import { updateChildAncestorsForIdService } from '@core/services/listeners/updateChildAncestorsForId.svc';
+import { auditLogListener } from '@core/services/listeners/auditLog.lstnr';
+import { searchListener } from '@core/services/listeners/indexing.lstnr';
+import { updateChildAncestorsForIdListener } from '@core/services/listeners/updateChildAncestorsForId.lstnr';
 import classificationCategoryRoutes from '@infrastructure/http/routes/classificationCategory.routes';
 import productCategoryRoutes from '@infrastructure/http/routes/productCategory.routes';
 import productRoutes from '@infrastructure/http/routes/product.routes';
 import productRoutesV1 from '@infrastructure/http/routes/productV1.routes';
 import catalogRoutes from '@infrastructure/http/routes/catalog.routes';
 import catalogSyncRoutes from '@infrastructure/http/routes/catalogSync.routes';
+import auditLogRoutes from '@infrastructure/http/routes/auditLog.routes';
 import typesense from '@infrastructure/search/plugins/typesense';
 
 export const createServer = async (): Promise<FastifyInstance> => {
@@ -107,11 +108,12 @@ export const createServer = async (): Promise<FastifyInstance> => {
   await server.register(productRoutesV1, { prefix: '/v1/products' });
   await server.register(catalogRoutes, { prefix: '/catalog' });
   await server.register(catalogSyncRoutes, { prefix: '/catalogSync' });
+  await server.register(auditLogRoutes, { prefix: '/auditLog' });
 
-  // Load Services
-  auditLogService(server);
-  searchService(server);
-  updateChildAncestorsForIdService(server);
+  // Load Listeners
+  auditLogListener(server);
+  searchListener(server);
+  updateChildAncestorsForIdListener(server);
 
   await server.ready();
 

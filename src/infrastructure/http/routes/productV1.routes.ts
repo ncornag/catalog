@@ -6,11 +6,11 @@ import {
   FindProductQueryString,
   FindProductQueryStringSchema
 } from '@infrastructure/http/schemas/product.schemas';
-import { productService } from '@core/services/productV1.svc';
+import { ProductService } from '@core/services/productV1.svc';
 import { Product } from '@core/entities/product';
 
 export default <FastifyPluginAsync>async function (server: FastifyInstance, opts: FastifyPluginOptions) {
-  let service = productService(server);
+  let service = ProductService.getInstance(server);
 
   // GET
   server.route({

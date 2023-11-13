@@ -46,7 +46,7 @@ const handler = async (data: any, server: any) => {
   }
 };
 
-class UpdateChildAncestorsForIdService {
+class UpdateChildAncestorsForIdListener {
   private server: any;
   constructor(server: any) {
     this.server = server;
@@ -81,6 +81,6 @@ class UpdateChildAncestorsForIdService {
   }
 }
 
-export const updateChildAncestorsForIdService = (server: any) => {
-  return new UpdateChildAncestorsForIdService(server).start();
+export const updateChildAncestorsForIdListener = (server: any) => {
+  return new UpdateChildAncestorsForIdListener(server).start();
 };

@@ -8,11 +8,11 @@ import {
   postProductCategorySchema,
   updateProductCategorySchema
 } from '@infrastructure/http/schemas/productCategory.schemas';
-import { productCategoryService } from '@core/services/productCategory.svc';
+import { ProductCategoryService } from '@core/services/productCategory.svc';
 import { ProductCategory } from '@core/entities/productCategory';
 
 export default <FastifyPluginAsync>async function (server: FastifyInstance, opts: FastifyPluginOptions) {
-  let service = productCategoryService(server);
+  let service = ProductCategoryService.getInstance(server);
 
   // CREATE
   server.route({

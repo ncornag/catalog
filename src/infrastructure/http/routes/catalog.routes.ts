@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
 import { Result } from 'ts-results';
 import { AppError } from '@core/lib/appError';
-import { catalogService } from '@core/services/catalog.svc';
+import { CatalogService } from '@core/services/catalog.svc';
 import {
   postCatalogSchema,
   CreateCatalogBody,
@@ -12,7 +12,7 @@ import {
 import { Catalog } from '@core/entities/catalog';
 
 export default <FastifyPluginAsync>async function (server: FastifyInstance, opts: FastifyPluginOptions) {
-  let service = catalogService(server);
+  let service = CatalogService.getInstance(server);
 
   // CREATE
   server.route({
