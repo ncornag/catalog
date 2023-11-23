@@ -25,7 +25,7 @@ export default <FastifyPluginAsync>async function (server: FastifyInstance, opts
     ) => {
       const result: Result<Product, AppError> = await service.findProductById(request.query.catalog, request.params.id);
       if (!result.ok) return reply.sendAppError(result.val);
-      return reply.code(201).send(result.val);
+      return reply.send(result.val);
     }
   });
 };

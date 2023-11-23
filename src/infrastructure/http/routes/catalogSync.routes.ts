@@ -25,7 +25,7 @@ export default <FastifyPluginAsync>async function (server: FastifyInstance, opts
       const result: Result<boolean, AppError> = await service.syncCatalogs(request.body);
 
       if (!result.ok) return reply.sendAppError(result.val);
-      return reply.code(201).send(result.val);
+      return reply.send(result.val);
     }
   });
 
@@ -58,7 +58,7 @@ export default <FastifyPluginAsync>async function (server: FastifyInstance, opts
       );
 
       if (!result.ok) return reply.sendAppError(result.val);
-      return reply.code(201).send(result.val);
+      return reply.send(result.val);
     }
   });
 
@@ -69,7 +69,7 @@ export default <FastifyPluginAsync>async function (server: FastifyInstance, opts
     handler: async (request: FastifyRequest<{ Params: FindCatalogSyncParms }>, reply: FastifyReply) => {
       const result: Result<CatalogSync, AppError> = await service.findCatalogSyncById(request.params.id);
       if (!result.ok) return reply.sendAppError(result.val);
-      return reply.code(201).send(result.val);
+      return reply.send(result.val);
     }
   });
 };
