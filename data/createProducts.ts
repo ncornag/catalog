@@ -16,28 +16,55 @@ function searchKeywords(min: number, max: number): string[] {
   return keywords;
 }
 
-function createRandomProduct(projectId: string, catalog: string): any {
-  return {
+function createRandomProduct(projectId: string, catalog: string, type: string, parent?: string): any {
+  if (type === 'variant' && !parent) throw new Error('Variant must have a parent');
+  if (type === 'base' && parent) throw new Error('Base cannot have a parent');
+  let result: any = {
     _id: nanoid(),
+    type,
     projectId,
     catalog,
-    name: { en: faker.commerce.productName(), de: fakerDE.commerce.productName() },
-    description: faker.commerce.productDescription(),
-    sku: faker.commerce.isbn(13),
-    searchKeywords: searchKeywords(1, 3),
-    attributes: {
-      color: faker.color.human(),
-      size: faker.string.numeric({ length: 1 })
-    },
     version: 0,
     createdAt: new Date().toISOString()
   };
+  if (type === 'base') {
+    result.name = { en: faker.commerce.productName(), de: fakerDE.commerce.productName() };
+    //result.description = faker.commerce.productDescription();
+    result.description = faker.lorem.paragraphs({ min: 1, max: 3 });
+    result.searchKeywords = searchKeywords(1, 3);
+  } else if (type === 'variant') {
+    result.parent = parent;
+    result.sku = faker.commerce.isbn(13);
+    result.attributes = {
+      color: faker.color.human(),
+      size: faker.string.numeric({ length: 1 })
+    };
+  }
+  return result;
 }
+
+async function writeAndLog(
+  count: number,
+  logCount: number,
+  start: number,
+  collection: any,
+  products: any[],
+  force: boolean = false
+) {
+  if (count % logCount === 0 || force) {
+    await collection.insertMany(products);
+    products.splice(0, products.length);
+    let end = new Date().getTime();
+    console.log(`Inserted ${count} products at ${((count * 1000) / (end - start)).toFixed()} items/s`);
+  }
+}
+
 const url = 'mongodb://localhost:27017';
 const client = new MongoClient(url);
 const dbName = 'example';
 const colName = 'ProductStage';
 const productsToInsert = parseInt(process.argv[2]) || 1;
+const variantsPerProduct = parseInt(process.argv[3]) || 1;
 const logCount = 10000;
 
 async function main() {
@@ -55,26 +82,24 @@ async function main() {
 
   let products = [];
   for (let i = 0; i < productsToInsert; i++) {
-    const p = createRandomProduct('TestProject', 'stage');
+    const p = createRandomProduct('TestProject', 'stage', 'base');
     products.push(p);
     count++;
-    if (count % logCount === 0) {
-      await collection.insertMany(products);
-      products = [];
-      let end = new Date().getTime();
-      console.log(`Inserted ${count} products in ${end - start} ms`);
+    await writeAndLog(count, logCount, start, collection, products);
+    for (let j = 0; j < variantsPerProduct; j++) {
+      const v = createRandomProduct('TestProject', 'stage', 'variant', p._id);
+      products.push(v);
+      count++;
+      await writeAndLog(count, logCount, start, collection, products);
     }
   }
   if (products.length > 0) {
-    await collection.insertMany(products);
+    await writeAndLog(count, logCount, start, collection, products, true);
   }
-  let end = new Date().getTime();
-  console.log(`Inserted ${count} products in ${end - start} ms`);
-
   console.log('Database seeded! :)');
 }
 
-main()
+await main()
   .then(console.log)
   .catch(console.error)
   .finally(() => client.close());

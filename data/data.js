@@ -386,14 +386,14 @@ db.ProductStage.insertMany([
         references: [{ category: "sdxc-memory-cards"}]
       },
       {
-        label: "4. Accesories",
-        key: "accesories",
+        label: "4. Accessories",
+        key: "accessories",
         type: "list",
         elementType: "reference",
         referenceType: "category",
-        min: 0, // 0 makes buying the accesories optional
-        max: 5, // 5 is the maximum number of accesories that can be added
-        references: [{ category: "accesories"}]
+        min: 0, // 0 makes buying the accessories optional
+        max: 5, // 5 is the maximum number of accessories that can be added
+        references: [{ category: "accessories"}]
       }
     ]
   },

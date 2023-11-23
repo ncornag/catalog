@@ -183,7 +183,10 @@ export default fp(async function (server: FastifyInstance) {
     server.db.col.auditLog.createIndex({ projectId: 1, catalogId: 1, entity: 1, entityId: 1 }, { name: 'CCA_Key' })
   );
   Object.keys(server.db.col.product).forEach((key) => {
+    console.log(key);
     indexes.push(server.db.col.product[key].createIndex({ parent: 1 }, { name: 'parent' }));
   });
-  await Promise.all(indexes);
+  console.log(indexes);
+  const r = await Promise.all(indexes);
+  console.log(r);
 });

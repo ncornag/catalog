@@ -33,7 +33,7 @@ export const createServer = async (): Promise<FastifyInstance> => {
   // Logger options per environment
   const envToLogger: any = {
     development: {
-      level: 'debug',
+      level: 'info',
       transport: {
         target: '@mgcrea/pino-pretty-compact',
         options: {
@@ -66,7 +66,7 @@ export const createServer = async (): Promise<FastifyInstance> => {
 
   // Global Error handler
   server.setErrorHandler(function (error, request, reply) {
-    console.log(JSON.stringify(error, null, 2));
+    //console.log(JSON.stringify(error, null, 2));
     if (error.validation) {
       const additionalProperty = error.validation[0]?.params?.additionalProperty
         ? ' [' + error.validation[0]?.params?.additionalProperty + ']'

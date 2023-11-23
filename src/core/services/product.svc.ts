@@ -158,6 +158,7 @@ export class ProductService implements IProductService {
         {
           $project: {
             'variants.parent': 0,
+            'variants.type': 0,
             'variants.catalog': 0,
             'variants.projectId': 0,
             'variants.createdAt': 0,
@@ -167,6 +168,7 @@ export class ProductService implements IProductService {
         }
       ]);
       if (result.err) return result;
+      if (result.val.length === 0) return new Err(new AppError(ErrorCode.NOT_FOUND, 'Product not found'));
       const entity = result.val[0];
       if (entity.type === ProductType.BASE) {
         delete entity.base;

@@ -78,7 +78,7 @@ export class ProductService implements IProductServiceV1 {
       lastModifiedAt: entity.lastModifiedAt,
       masterData: {
         current: {
-          categories: entity.categories.map((c: any) => ({ id: c, typeId: 'category' })),
+          categories: entity.categories?.map((c: any) => ({ id: c, typeId: 'category' })),
           // TODO: Do it right when slug supports locale, assuming "en"
           description: {
             en: entity.description
