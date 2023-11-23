@@ -1,4 +1,4 @@
-import { faker, fakerDE } from '@faker-js/faker';
+import { fakerEN, fakerDE } from '@faker-js/faker';
 import { MongoClient } from 'mongodb';
 import { nanoid } from 'nanoid';
 
@@ -11,7 +11,7 @@ function searchKeywords(min: number, max: number): string[] {
   const keywords = [];
   const m = randomIntFromInterval(min, max);
   for (let i = 0; i < m; i++) {
-    keywords.push(faker.commerce.productAdjective());
+    keywords.push(fakerEN.commerce.productAdjective());
   }
   return keywords;
 }
@@ -28,16 +28,18 @@ function createRandomProduct(projectId: string, catalog: string, type: string, p
     createdAt: new Date().toISOString()
   };
   if (type === 'base') {
-    result.name = { en: faker.commerce.productName(), de: fakerDE.commerce.productName() };
-    //result.description = faker.commerce.productDescription();
-    result.description = faker.lorem.paragraphs({ min: 1, max: 3 });
+    result.name = { en: fakerEN.commerce.productName(), de: fakerDE.commerce.productName() };
+    result.description = {
+      en: fakerEN.lorem.paragraphs({ min: 1, max: 3 }),
+      de: fakerDE.lorem.paragraphs({ min: 1, max: 3 })
+    };
     result.searchKeywords = searchKeywords(1, 3);
   } else if (type === 'variant') {
     result.parent = parent;
-    result.sku = faker.commerce.isbn(13);
+    result.sku = fakerEN.commerce.isbn(13);
     result.attributes = {
-      color: faker.color.human(),
-      size: faker.string.numeric({ length: 1 })
+      color: fakerEN.color.human(),
+      size: fakerEN.string.numeric({ length: 1 })
     };
   }
   return result;
