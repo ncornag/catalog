@@ -8,7 +8,7 @@ function randomIntFromInterval(min: number, max: number) {
 }
 
 function searchKeywords(min: number, max: number): string[] {
-  const keywords = [];
+  const keywords: string[] = [];
   const m = randomIntFromInterval(min, max);
   for (let i = 0; i < m; i++) {
     keywords.push(fakerEN.commerce.productAdjective());
