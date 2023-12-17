@@ -63,7 +63,7 @@ async function writeAndLog(
 
 const url = 'mongodb://localhost:27017';
 const client = new MongoClient(url);
-const dbName = 'example';
+const dbName = 'ct2';
 const colName = 'ProductStage';
 const productsToInsert = parseInt(process.argv[2]) || 1;
 const variantsPerProduct = parseInt(process.argv[3]) || 1;
@@ -82,7 +82,7 @@ async function main() {
   let count = 0;
   let start = new Date().getTime();
 
-  let products = [];
+  let products: any[] = [];
   for (let i = 0; i < productsToInsert; i++) {
     const p = createRandomProduct('TestProject', 'stage', 'base');
     products.push(p);
