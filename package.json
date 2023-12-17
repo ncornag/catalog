@@ -32,6 +32,8 @@
     "ts-node": "^10.9.1"
   },
   "dependencies": {
+    "@commercetools/platform-sdk": "^7.1.0",
+    "@commercetools/sdk-client-v2": "^2.3.0",
     "@fastify/mongodb": "^8.0.0",
     "@fastify/request-context": "^5.0.0",
     "@fastify/swagger": "^8.3.1",
@@ -51,6 +53,7 @@
     "module-alias": "^2.2.2",
     "mongo-update": "^1.1.0",
     "nanoid": "^3.3.4",
+    "node-fetch": "^3.3.2",
     "nodemon": "^3.0.1",
     "rimraf": "^5.0.5",
     "ts-results": "^3.3.0",
