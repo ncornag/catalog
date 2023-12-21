@@ -25,7 +25,7 @@ class ProductImporter {
     this.collection = this.db.collection(this.colName);
   }
 
-  public async writeAndLog(
+  private async writeAndLog(
     count: number,
     logCount: number,
     start: number,
@@ -41,7 +41,7 @@ class ProductImporter {
     }
   }
 
-  public createProduct(p: Product | ProductVariant, projectId: string, catalog: string, parent?: string): any {
+  private createProduct(p: Product | ProductVariant, projectId: string, catalog: string, parent?: string): any {
     //console.log(JSON.stringify(p, null, 2));
     let result: any = {
       projectId,
@@ -74,7 +74,8 @@ class ProductImporter {
     //console.log(JSON.stringify(result, null, 2));
     return result;
   }
-  createPrices(prices: any): any {
+
+  private createPrices(prices: any): any {
     let order = 1;
     return prices
       .sort((a, b) => {
@@ -90,29 +91,74 @@ class ProductImporter {
         if (b.validFrom) bc += 1;
         return ac < bc;
       })
-      .map((pr: any) => {
-        const tiers: any = [{ value: pr.value, n: 0 }].concat(pr.tiers ?? []);
+      .map((price: any) => {
+        const tiers: any = [{ value: price.value, n: 0 }].concat(price.tiers ?? []);
         let n = 1;
         return tiers
           .sort((a, b) => {
             return a.minimumQuantity < b.minimumQuantity;
           })
-          .map((t: any) => {
-            let r: any = { order: order++, id: `${pr.id}#${t.n ?? n++}` };
-            if (pr.key) r.key = `${pr.key}#${t.n ?? n - 1}`;
-            let predicate = '';
-            if (pr.country) predicate += `${predicate ?? ' AND '}country='${pr.country}'`;
-            if (pr.customerGroup) predicate += `${predicate ? ' AND ' : ''}customerGroup='${pr.customerGroup.id}'`;
-            if (pr.channel) predicate += `${predicate ? ' AND ' : ''}channel='${pr.channel.id}'`;
-            if (pr.validFrom) predicate += `${predicate ? ' AND ' : ''}date>='${pr.validFrom}'`;
-            if (pr.validUntil) predicate += `${predicate ? ' AND ' : ''}date<='${pr.validUntil}'`;
-            if (t.minimumQuantity) predicate += `${predicate ? ' AND ' : ''}minimumQuantity>=${t.minimumQuantity}`;
-            r.predicate = predicate;
-            r.value = t.value;
+          .map((tier: any) => {
+            let r: any = { order: order++, id: `${price.id}#${tier.n ?? n++}` };
+            if (price.key) r.key = `${price.key}#${tier.n ?? n - 1}`;
+            r.value = tier.value;
+            r.conditions = this.createConditions(this.fieldPredicateOperators, tier, price);
+            r.predicate = this.createPredicate(r.conditions);
             return r;
           });
       })
       .flat();
+  }
+
+  private fieldPredicateOperators = {
+    country: { operator: 'in', field: 'country', type: 'array' },
+    customerGroup: { operator: 'in', field: 'customerGroup', type: 'array', typeId: 'customer-group' },
+    channel: { operator: 'in', field: 'channel', type: 'array', typeId: 'channel' },
+    validFrom: { operator: '>=', field: 'date', type: 'date' },
+    validUntil: { operator: '<=', field: 'date', type: 'date' },
+    minimumQuantity: { operator: '>=', field: 'quantity', type: 'number' }
+  };
+
+  private surroundByQuotes(value: any) {
+    return typeof value === 'string' ? `'${value}'` : value;
+  }
+
+  private createConditions(data: any, tier: any, price: any) {
+    return Object.entries(data).reduce((acc: any, [key, value]: [string, any]) => {
+      let dataValue = price[key] || tier[key];
+      if (!dataValue) return acc;
+      if (value.type === 'array' && value.typeId) {
+        acc[key] = [dataValue.id];
+      } else if (value.type === 'array') {
+        acc[key] = [dataValue];
+      } else if (value.type === 'number') {
+        acc[key] = +dataValue;
+      } else {
+        acc[key] = dataValue;
+      }
+      return acc;
+    }, {});
+  }
+  private createPredicate(data: any) {
+    let predicate = Object.entries(data).reduce((acc, [key, value]) => {
+      if (acc) acc += ' and ';
+      let op = this.fieldPredicateOperators[key] ? this.fieldPredicateOperators[key].operator : '=';
+      let field = this.fieldPredicateOperators[key] ? this.fieldPredicateOperators[key].field : key;
+      let val: any = value;
+      if (op === 'in') {
+        if (!Array.isArray(val)) val = [val];
+        if (val.length > 1) acc += '(';
+        for (let i = 0; i < val.length; i++) {
+          if (i > 0) acc += ' or ';
+          acc += `${this.surroundByQuotes(val[i])} in ${field}`;
+        }
+        if (val.length > 1) acc += ')';
+      } else {
+        acc += `${field}${op}${this.surroundByQuotes(val)}`;
+      }
+      return acc;
+    }, '');
+    return predicate;
   }
 
   public async importProducts(firstProductToImport: number = 0, productsToImport: number = 1) {
