@@ -13,103 +13,11 @@ class ProductImporter {
   private ct: CT;
   private mongoClient: MongoClient;
   private db: Db;
-  private collection: Collection;
-  private colName = 'ProductStage';
+  private productCollection: Collection;
+  private productCollectionName = 'ProductStage';
+  private priceCollection: Collection;
+  private priceCollectionName = 'PricesStage';
   private logCount = 1000;
-
-  constructor(server: any) {
-    this.server = server;
-    this.ct = new CT(this.server);
-    this.mongoClient = new MongoClient(this.server.config.MONGO_URL);
-    this.db = this.mongoClient.db();
-    this.collection = this.db.collection(this.colName);
-  }
-
-  private async writeAndLog(
-    count: number,
-    logCount: number,
-    start: number,
-    collection: any,
-    products: any[],
-    force: boolean = false
-  ) {
-    if (count % logCount === 0 || force) {
-      await collection.insertMany(products);
-      products.splice(0, products.length);
-      let end = new Date().getTime();
-      console.log(`Inserted ${count} products at ${((count * 1000) / (end - start)).toFixed()} items/s`);
-    }
-  }
-
-  private createProduct(p: Product | ProductVariant, projectId: string, catalog: string, parent?: string): any {
-    //console.log(JSON.stringify(p, null, 2));
-    let result: any = {
-      projectId,
-      catalog,
-      createdAt: new Date().toISOString()
-    };
-    if ('masterData' in p) {
-      const c = p.masterData.current;
-      result._id = p.id;
-      result.type = 'base';
-      result.key = p.key;
-      result.version = p.version;
-      result.name = c.name;
-      result.description = c.description;
-      result.slug = c.slug;
-      result.categories = c.categories;
-      result.searchKeywords = [];
-    } else {
-      result._id = nanoid();
-      result.type = 'variant';
-      result.parent = parent;
-      result.sku = p.sku;
-      result.key = p.key;
-      result.attributes = {};
-      result.prices = this.createPrices(p.prices);
-      p.attributes?.forEach((a) => {
-        result.attributes[a.name] = a.value;
-      });
-    }
-    //console.log(JSON.stringify(result, null, 2));
-    return result;
-  }
-
-  private createPrices(prices: any): any {
-    let order = 1;
-    return prices
-      .sort((a, b) => {
-        let ac = 0;
-        if (a.country) ac += 1;
-        if (a.customerGroup) ac += 1;
-        if (a.channel) ac += 1;
-        if (a.validFrom) ac += 1;
-        let bc = 0;
-        if (b.country) bc += 1;
-        if (b.customerGroup) bc += 1;
-        if (b.channel) bc += 1;
-        if (b.validFrom) bc += 1;
-        return ac < bc;
-      })
-      .map((price: any) => {
-        const tiers: any = [{ value: price.value, n: 0 }].concat(price.tiers ?? []);
-        let n = 1;
-        return tiers
-          .sort((a, b) => {
-            return a.minimumQuantity < b.minimumQuantity;
-          })
-          .map((tier: any) => {
-            let r: any = { order: order++, id: `${price.id}#${tier.n ?? n++}` };
-            if (price.key) r.key = `${price.key}#${tier.n ?? n - 1}`;
-            r.value = tier.value;
-            r.conditions = this.createConditions(this.fieldPredicateOperators, tier, price);
-            r.predicate = this.createPredicate(r.conditions);
-            return r;
-          });
-      })
-      .flat();
-  }
-
   private fieldPredicateOperators = {
     country: { operator: 'in', field: 'country', type: 'array' },
     customerGroup: { operator: 'in', field: 'customerGroup', type: 'array', typeId: 'customer-group' },
@@ -119,11 +27,109 @@ class ProductImporter {
     minimumQuantity: { operator: '>=', field: 'quantity', type: 'number' }
   };
 
+  constructor(server: any) {
+    this.server = server;
+    this.ct = new CT(this.server);
+    this.mongoClient = new MongoClient(this.server.config.MONGO_URL);
+    this.db = this.mongoClient.db();
+    this.productCollection = this.db.collection(this.productCollectionName);
+    this.priceCollection = this.db.collection(this.priceCollectionName);
+  }
+
+  private async writeAndLog(params: any) {
+    if (params.count % this.logCount === 0 || params.force === true) {
+      await this.productCollection.insertMany(params.products);
+      await this.priceCollection.insertMany(params.prices);
+      params.products.splice(0, params.products.length);
+      params.prices.splice(0, params.prices.length);
+      let end = new Date().getTime();
+      console.log(
+        `Inserted ${params.productsCount} products at ${(
+          (params.productsCount * 1000) /
+          (end - params.start)
+        ).toFixed()} items/s`
+      );
+    }
+  }
+
+  private createProduct(p: Product | ProductVariant, projectId: string, catalog: string, parent?: string): any {
+    let result: any = {
+      projectId,
+      catalog,
+      createdAt: new Date().toISOString()
+    };
+    let key = p.key;
+    if ('masterData' in p) {
+      const c = p.masterData.current;
+      let description = c.description;
+      return Object.assign(
+        result,
+        {
+          _id: p.id,
+          type: 'base',
+          version: p.version,
+          name: c.name,
+          slug: c.slug,
+          categories: c.categories,
+          searchKeywords: []
+        },
+        description && { description },
+        key && { key }
+      );
+    } else {
+      return Object.assign(
+        result,
+        {
+          _id: nanoid(),
+          type: 'variant',
+          parent: parent,
+          sku: p.sku,
+          attributes: p.attributes?.reduce((acc: any, a: any) => {
+            acc[a.name] = a.value;
+            return acc;
+          }, {})
+        },
+        key && { key }
+      );
+    }
+  }
+
+  private createPrices(variant: ProductVariant, projectId: string, catalog: string): any {
+    return variant.prices?.map((price: any) => {
+      let order = 1;
+      const tiers: any = [{ value: price.value }].concat(price.tiers ?? []);
+      let key = price.key;
+      return Object.assign(
+        {},
+        {
+          _id: price.id,
+          projectId,
+          catalog,
+          createdAt: new Date().toISOString(),
+          sku: variant.sku,
+          prices: tiers
+            .sort((a: any, b: any) => {
+              return a.minimumQuantity < b.minimumQuantity;
+            })
+            .map((tier: any) => {
+              let constraints = this.createConstraints(this.fieldPredicateOperators, tier, price);
+              return {
+                order: order++,
+                value: tier.value,
+                constraints,
+                predicate: this.createPredicate(constraints)
+              };
+            })
+        },
+        key && { key }
+      );
+    });
+  }
+
   private surroundByQuotes(value: any) {
     return typeof value === 'string' ? `'${value}'` : value;
   }
-
-  private createConditions(data: any, tier: any, price: any) {
+  private createConstraints(data: any, tier: any, price: any) {
     return Object.entries(data).reduce((acc: any, [key, value]: [string, any]) => {
       let dataValue = price[key] || tier[key];
       if (!dataValue) return acc;
@@ -162,18 +168,21 @@ class ProductImporter {
   }
 
   public async importProducts(firstProductToImport: number = 0, productsToImport: number = 1) {
-    const products: Product[] = [];
+    const products: any[] = [];
+    const prices: any[] = [];
     const pageSize = 500;
     let limit = productsToImport > pageSize ? pageSize : productsToImport;
     let offset = firstProductToImport;
     let body: ProductPagedQueryResponse;
     let productsCount = 0;
     let variantsCount = 0;
+    let pricesCount = 0;
     let lastId: any = null;
 
     try {
-      await this.collection.drop();
-      console.log(`Collection ${this.colName} dropped!`);
+      await this.productCollection.drop();
+      await this.priceCollection.drop();
+      console.log(`Collections ${this.productCollectionName} and ${this.priceCollectionName} dropped!`);
     } catch (e) {
       //console.log(e);
     }
@@ -199,18 +208,22 @@ class ProductImporter {
       for (let p = 0; p < body.results.length; p++) {
         const product = body.results[p];
         //console.log(`Importing product ${product.id} ${product.key} ${product.masterData.current.name}`);
-        // Write Base
+        // Import Base
         const base = this.createProduct(product, 'TestProject', 'stage');
         products.push(base);
         productsCount++;
-        await this.writeAndLog(productsCount, this.logCount, start, this.collection, products);
-        // Write Variants
+        await this.writeAndLog({ productsCount, start, products, prices });
+        // Import Variants
         product.masterData.current.variants.push(product.masterData.current.masterVariant);
         for (let v = 0; v < product.masterData.current.variants.length; v++) {
           const variant = product.masterData.current.variants[v];
           products.push(this.createProduct(variant, 'TestProject', 'stage', base._id));
           variantsCount++;
-          await this.writeAndLog(productsCount, this.logCount, start, this.collection, products);
+          if (product.priceMode === 'Embedded') {
+            prices.push(...this.createPrices(variant, 'TestProject', 'stage'));
+            pricesCount += variant.prices?.length ?? 0;
+          }
+          await this.writeAndLog({ productsCount, start, products, prices });
         }
       }
       if (body.results.length != 0) lastId = body.results[body.results.length - 1].id;
@@ -218,9 +231,9 @@ class ProductImporter {
       offset = body.offset + body.count;
     } while (body.count > 0 && productsCount < productsToImport);
     if (products.length > 0) {
-      await this.writeAndLog(productsCount, this.logCount, start, this.collection, products, true);
+      await this.writeAndLog({ productsCount, start, products, prices, force: true });
     }
-    console.log(`Products imported! ${productsCount} products and ${variantsCount} variants.`);
+    console.log(`Products imported! ${productsCount} products, ${variantsCount} variants and ${pricesCount} prices.`);
   }
 }
 
