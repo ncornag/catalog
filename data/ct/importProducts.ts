@@ -13,10 +13,9 @@ class ProductImporter {
   private ct: CT;
   private mongoClient: MongoClient;
   private db: Db;
-  private productCollection: Collection;
-  private productCollectionName = 'ProductStage';
-  private priceCollection: Collection;
-  private priceCollectionName = 'PricesStage';
+  private productCollectionName = 'Product';
+  private pricesCollectionName = 'Prices';
+  private col: any = {};
   private logCount = 1000;
   private fieldPredicateOperators = {
     country: { operator: 'in', field: 'country', type: 'array' },
@@ -27,21 +26,31 @@ class ProductImporter {
     minimumQuantity: { operator: '>=', field: 'quantity', type: 'number' }
   };
 
-  constructor(server: any) {
+  constructor(server: any, stageSufix: string, currentSufix: string) {
     this.server = server;
     this.ct = new CT(this.server);
     this.mongoClient = new MongoClient(this.server.config.MONGO_URL);
     this.db = this.mongoClient.db();
-    this.productCollection = this.db.collection(this.productCollectionName);
-    this.priceCollection = this.db.collection(this.priceCollectionName);
+    this.col.products = {
+      staged: this.db.collection(`${this.productCollectionName}${stageSufix}`),
+      current: this.db.collection(`${this.productCollectionName}${currentSufix}`)
+    };
+    this.col.prices = {
+      staged: this.db.collection(`${this.pricesCollectionName}${stageSufix}`),
+      current: this.db.collection(`${this.pricesCollectionName}${currentSufix}`)
+    };
   }
 
   private async writeAndLog(params: any) {
     if (params.count % this.logCount === 0 || params.force === true) {
-      await this.productCollection.insertMany(params.products);
-      await this.priceCollection.insertMany(params.prices);
-      params.products.splice(0, params.products.length);
-      params.prices.splice(0, params.prices.length);
+      await this.col.products.staged.insertMany(params.stagedProducts);
+      await this.col.prices.staged.insertMany(params.stagedPrices);
+      await this.col.products.current.insertMany(params.currentProducts);
+      await this.col.prices.current.insertMany(params.currentPrices);
+      params.stagedProducts.splice(0, params.stagedProducts.length);
+      params.stagedPrices.splice(0, params.stagedPrices.length);
+      params.currentProducts.splice(0, params.currentProducts.length);
+      params.currentPrices.splice(0, params.currentPrices.length);
       let end = new Date().getTime();
       console.log(
         `Inserted ${params.productsCount} products at ${(
@@ -52,61 +61,69 @@ class ProductImporter {
     }
   }
 
-  private createProduct(p: Product | ProductVariant, projectId: string, catalog: string, parent?: string): any {
-    let result: any = {
-      projectId,
-      catalog,
-      createdAt: new Date().toISOString()
-    };
-    let key = p.key;
-    if ('masterData' in p) {
-      const c = p.masterData.current;
-      let description = c.description;
-      return Object.assign(
-        result,
-        {
-          _id: p.id,
-          type: 'base',
-          version: p.version,
-          name: c.name,
-          slug: c.slug,
-          categories: c.categories,
-          searchKeywords: []
-        },
-        description && { description },
-        key && { key }
-      );
-    } else {
-      return Object.assign(
-        result,
-        {
-          _id: nanoid(),
-          type: 'variant',
-          parent: parent,
-          sku: p.sku,
-          attributes: p.attributes?.reduce((acc: any, a: any) => {
-            acc[a.name] = a.value;
-            return acc;
-          }, {})
-        },
-        key && { key }
-      );
-    }
+  private createProduct(p: Product, projectId: string, catalog: string): any {
+    const c = p.masterData[catalog];
+    return Object.assign(
+      {},
+      {
+        _id: p.id,
+        version: p.version,
+        projectId,
+        catalog: catalog === 'staged' ? 'stage' : 'online',
+        type: 'base',
+        createdAt: p.createdAt,
+        name: c.name,
+        slug: c.slug,
+        categories: c.categories.map((c) => {
+          return c.id;
+        }),
+        searchKeywords: c.searchKeywords,
+        priceMode: p.priceMode,
+        taxCategory: p.taxCategory?.id
+      },
+      c.description && { description: c.description },
+      p.key && { key: p.key },
+      p.lastModifiedAt && { lastModifiedAt: p.lastModifiedAt }
+    );
   }
 
-  private createPrices(variant: ProductVariant, projectId: string, catalog: string): any {
-    return variant.prices?.map((price: any) => {
+  private createVariant(v: ProductVariant, p: Product, projectId: string, catalog: string, parent: string): any {
+    return Object.assign(
+      {},
+      {
+        _id: p.id + '#' + v.id,
+        version: p.version,
+        projectId,
+        catalog: catalog === 'staged' ? 'stage' : 'online',
+        createdAt: p.createdAt,
+        type: 'variant',
+        parent: parent,
+        sku: v.sku,
+        attributes: v.attributes?.reduce((acc: any, a: any) => {
+          acc[a.name] = a.value;
+          return acc;
+        }, {}),
+        priceMode: p.priceMode
+      },
+      v.key && { key: v.key },
+      p.lastModifiedAt && { lastModifiedAt: p.lastModifiedAt }
+    );
+  }
+
+  private createPrices(v: ProductVariant, p: Product, projectId: string, catalog: string): any {
+    return v.prices?.map((price: any) => {
       let order = 1;
       const tiers: any = [{ value: price.value }].concat(price.tiers ?? []);
-      let key = price.key;
       return Object.assign(
         {},
         {
           _id: price.id,
+          version: p.version,
           projectId,
-          catalog,
-          createdAt: new Date().toISOString(),
-          sku: variant.sku,
+          catalog: catalog === 'staged' ? 'stage' : 'online',
+          createdAt: p.createdAt,
+          sku: v.sku,
+          active: true,
           prices: tiers
             .sort((a: any, b: any) => {
               return a.minimumQuantity < b.minimumQuantity;
@@ -121,7 +138,8 @@ class ProductImporter {
               };
             })
         },
-        key && { key }
+        price.key && { key: price.key },
+        p.lastModifiedAt && { lastModifiedAt: p.lastModifiedAt }
       );
     });
   }
@@ -168,21 +186,22 @@ class ProductImporter {
   }
 
   public async importProducts(firstProductToImport: number = 0, productsToImport: number = 1) {
-    const products: any[] = [];
-    const prices: any[] = [];
+    const stagedProducts: any[] = [];
+    const stagedPrices: any[] = [];
+    const currentProducts: any[] = [];
+    const currentPrices: any[] = [];
     const pageSize = 500;
     let limit = productsToImport > pageSize ? pageSize : productsToImport;
     let offset = firstProductToImport;
     let body: ProductPagedQueryResponse;
     let productsCount = 0;
-    let variantsCount = 0;
-    let pricesCount = 0;
     let lastId: any = null;
 
     try {
-      await this.productCollection.drop();
-      await this.priceCollection.drop();
-      console.log(`Collections ${this.productCollectionName} and ${this.priceCollectionName} dropped!`);
+      await this.col.products.staged.drop();
+      await this.col.prices.staged.drop();
+      await this.col.products.current.drop();
+      await this.col.prices.current.drop();
     } catch (e) {
       //console.log(e);
     }
@@ -193,8 +212,7 @@ class ProductImporter {
       offset,
       withTotal: false,
       sort: 'id asc',
-      //where: 'id = "ee30b714-ebc4-4d00-969b-b6a16e156bf8"'
-      where: 'id = "57d89fc3-2034-4c3d-b2e1-5617a32bdb45"'
+      where: 'id = "57d89fc3-2034-4c3d-b2e1-5617a32bdb45" or id = "6a3736e4-eaba-416c-87f0-77612f9bb265"'
     };
     do {
       if (lastId != null) {
@@ -206,41 +224,59 @@ class ProductImporter {
         `offset: ${body.offset} limit: ${body.limit} count: ${body.count} query: ${JSON.stringify(queryArgs)}`
       );
       for (let p = 0; p < body.results.length; p++) {
-        const product = body.results[p];
-        //console.log(`Importing product ${product.id} ${product.key} ${product.masterData.current.name}`);
-        // Import Base
-        const base = this.createProduct(product, 'TestProject', 'stage');
-        products.push(base);
+        await this.importCatalogProduct('staged', 'TestProject', body.results[p], stagedProducts, stagedPrices);
+        await this.importCatalogProduct('current', 'TestProject', body.results[p], currentProducts, currentPrices);
         productsCount++;
-        await this.writeAndLog({ productsCount, start, products, prices });
-        // Import Variants
-        product.masterData.current.variants.push(product.masterData.current.masterVariant);
-        for (let v = 0; v < product.masterData.current.variants.length; v++) {
-          const variant = product.masterData.current.variants[v];
-          products.push(this.createProduct(variant, 'TestProject', 'stage', base._id));
-          variantsCount++;
-          if (product.priceMode === 'Embedded') {
-            prices.push(...this.createPrices(variant, 'TestProject', 'stage'));
-            pricesCount += variant.prices?.length ?? 0;
-          }
-          await this.writeAndLog({ productsCount, start, products, prices });
-        }
+        await this.writeAndLog({
+          productsCount,
+          start,
+          stagedProducts,
+          stagedPrices,
+          currentProducts,
+          currentPrices
+        });
       }
       if (body.results.length != 0) lastId = body.results[body.results.length - 1].id;
       limit = productsToImport - productsCount > pageSize ? pageSize : productsToImport - productsCount;
       offset = body.offset + body.count;
     } while (body.count > 0 && productsCount < productsToImport);
-    if (products.length > 0) {
-      await this.writeAndLog({ productsCount, start, products, prices, force: true });
+    if (stagedProducts.length > 0) {
+      await this.writeAndLog({
+        productsCount,
+        start,
+        stagedProducts,
+        stagedPrices,
+        currentProducts,
+        currentPrices,
+        force: true
+      });
     }
-    console.log(`Products imported! ${productsCount} products, ${variantsCount} variants and ${pricesCount} prices.`);
+    console.log(`Products imported! ${productsCount} products`);
+  }
+
+  private async importCatalogProduct(catalog, project, product, products, prices) {
+    // Import Base
+    const base = this.createProduct(product, project, catalog);
+    products.push(base);
+    // Import Variants
+    product.masterData[catalog].variants.push(product.masterData[catalog].masterVariant);
+    for (let v = 0; v < product.masterData[catalog].variants.length; v++) {
+      const variant = product.masterData[catalog].variants[v];
+      products.push(this.createVariant(variant, product, project, catalog, base._id));
+      // Import Prices
+      if (product.priceMode === 'Embedded') {
+        prices.push(...this.createPrices(variant, product, project, catalog));
+      }
+    }
   }
 }
 
 const firstProductToImport = parseInt(process.argv[2]) || 0;
 const productsToImport = parseInt(process.argv[3]) || 1;
+const stageSufix = process.argv[4] || 'Stage';
+const currentSufix = process.argv[5] || 'Online';
 
-const productImporter = new ProductImporter(server);
+const productImporter = new ProductImporter(server, stageSufix, currentSufix);
 
 await productImporter.importProducts(firstProductToImport, productsToImport);
 

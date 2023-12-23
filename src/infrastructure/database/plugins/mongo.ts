@@ -15,6 +15,7 @@ import {
   getProductCategoryCollection
 } from '@infrastructure/repositories/productCategory.repo';
 import { ProductRepository, getProductCollection } from '@infrastructure/repositories/product.repo';
+import { PriceRepository, getPriceCollection } from '@infrastructure/repositories/price.repo';
 import { CatalogRepository, getCatalogCollection } from '@infrastructure/repositories/catalog.repo';
 import { CatalogSyncRepository, getCatalogSyncCollection } from '@infrastructure/repositories/catalogSync.repo';
 import { AuditLogRepository, getAuditLogCollection } from '@infrastructure/repositories/auditLog.repo';
@@ -163,6 +164,7 @@ export default fp(async function (server: FastifyInstance) {
   server.db.col.classificationCategory = getClassificationCategoryCollection(server.mongo.db!);
   server.db.col.productCategory = getProductCategoryCollection(server.mongo.db!);
   server.db.col.product = await getProductCollection(server.mongo.db!);
+  server.db.col.price = await getPriceCollection(server.mongo.db!);
   server.db.col.catalog = getCatalogCollection(server.mongo.db!);
   server.db.col.catalogSync = getCatalogSyncCollection(server.mongo.db!);
   server.db.col.auditLog = getAuditLogCollection(server.mongo.db!);
@@ -171,6 +173,7 @@ export default fp(async function (server: FastifyInstance) {
   server.db.repo.classificationCategoryRepository = new ClassificationCategoryRepository(server);
   server.db.repo.productCategoryRepository = new ProductCategoryRepository(server);
   server.db.repo.productRepository = new ProductRepository(server);
+  server.db.repo.priceRepository = new PriceRepository(server);
   server.db.repo.catalogRepository = new CatalogRepository(server);
   server.db.repo.catalogSyncRepository = new CatalogSyncRepository(server);
   server.db.repo.auditLogRepository = new AuditLogRepository(server);
@@ -184,6 +187,9 @@ export default fp(async function (server: FastifyInstance) {
   );
   Object.keys(server.db.col.product).forEach((key) => {
     indexes.push(server.db.col.product[key].createIndex({ parent: 1 }, { name: 'parent' }));
+  });
+  Object.keys(server.db.col.price).forEach((key) => {
+    indexes.push(server.db.col.price[key].createIndex({ sku: 1 }, { name: 'sku' }));
   });
   const r = await Promise.all(indexes);
 });
