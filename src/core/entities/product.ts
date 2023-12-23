@@ -8,11 +8,20 @@ export enum ProductUpdateActionType {
   CHANGEKEYWORDS = 'changeKeywords'
 }
 
-// Localized String
+// Localized Strings/Arrays
+// TODO: Refactor
 const i18nKeyType = Type.Record(Type.String({ pattern: '^[a-z]{2}([_])?([A-Za-z]{2})?$' }), Type.String(), {
   additionalProperties: false,
   minProperties: 1
 });
+const i18nArrayKeyType = Type.Record(
+  Type.String({ pattern: '^[a-z]{2}([_])?([A-Za-z]{2})?$' }),
+  Type.Array(Type.Object({ text: Type.String(), suggestTokenizer: Type.Object({ type: Type.String() }) })),
+  {
+    additionalProperties: false,
+    minProperties: 1
+  }
+);
 
 // ACTIONS
 
@@ -70,13 +79,13 @@ export const ProductSchema = Type.Object(
     description: i18nKeyType,
     sku: Type.Optional(Type.String()), // Optional in the base product
     slug: Type.Optional(i18nKeyType), // Optional in the variants
-    searchKeywords: Type.Array(Type.String(), { default: [] }),
+    searchKeywords: i18nArrayKeyType, // TODO: Refactor
     categories: Type.Array(Type.String(), { default: [] }),
     attributes: Type.Any({ default: {} }),
     type: Type.Enum(ProductType), // BASE, VARIANT, COMPOSITE...
     parent: Type.String({ default: '' }), // If this is a variant, the parent product id
-    status: Type.Optional(Type.String()), // Active, Inactive... Approved, Pending, Rejected
-    original: Type.Optional(Type.Any()), // The original product before any changes
+    //status: Type.Optional(Type.String()), // TODO: implement workflow: Active, Inactive... Approved, Pending, Rejected
+    taxCategory: Type.Optional(Type.String()), // TODO: implement taxes
     ...AuditFields
   },
   { additionalProperties: false }

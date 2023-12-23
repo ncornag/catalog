@@ -57,70 +57,56 @@ export class CT {
     return createApiBuilderFromCtpClient(ctpClient).withProjectKey({ projectKey });
   };
 
-  public toCTProduct(stagedProduct: any, currentProduct: any): any {
-    const sp = this.toCTProductVersion(stagedProduct);
-    const cp = currentProduct ? this.toCTProductVersion(currentProduct) : {};
-    const hasStagedChanges = Value.Diff(sp, cp).length > 0;
+  public toCTProduct(stagedProduct: any, onlineProduct: any, stagedPrices: any, onlinePrices: any): any {
+    const sp: any = this.toCTProductVersion(stagedProduct, stagedPrices);
+    const op: any = onlineProduct ? this.toCTProductVersion(onlineProduct, onlinePrices) : {};
+    const hasStagedChanges = Value.Diff(sp, op).length > 0;
     return {
       id: stagedProduct._id,
       version: stagedProduct.version,
-      // versionModifiedAt: '2023-12-18T13:56:59.005Z',
-      // lastMessageSequenceNumber: 18,
-      // createdAt: '2023-12-07T12:26:42.371Z',
-      // lastModifiedAt: '2023-12-18T13:56:59.005Z',
-      // lastModifiedBy: {
-      //   isPlatformClient: true,
-      //   user: {
-      //     typeId: 'user',
-      //     id: '4ac2f167-af7e-4e7d-9c85-4cf8ee9f1478'
-      //   }
-      // },
-      // createdBy: {
-      //   isPlatformClient: true,
-      //   user: {
-      //     typeId: 'user',
-      //     id: '4ac2f167-af7e-4e7d-9c85-4cf8ee9f1478'
-      //   }
-      // },
-      // TODO: Get the first Classification Category of the first Product Category
-      productType: {
-        id: 'xxx-yyy-zzz',
-        typeId: 'product-type'
-      },
       createdAt: stagedProduct.createdAt,
       lastModifiedAt: stagedProduct.lastModifiedAt,
+      // TODO: Get the first Classification Category of the first Product Category
+      productType: {
+        typeId: 'product-type',
+        id: 'xxx-yyy-zzz'
+      },
       masterData: {
+        current: op,
         staged: sp,
-        current: cp,
-        hasStagedChanges,
-        // Unsupported right now, faking data
-        published: true
+        published: op.name ? true : false,
+        hasStagedChanges
       },
       // Unsupported right now, faking data
       taxCategory: {
-        id: 'xxx-yyy-zzz',
-        typeId: 'tax-category'
+        typeId: 'tax-category',
+        id: stagedProduct.taxCategory
       },
-      priceMode: 'Embedded'
+      priceMode: stagedProduct.priceMode
     };
   }
 
-  private toCTProductVersion(productVersion: any) {
+  private toCTProductVersion(productVersion: any, pricesVersion: any) {
+    //console.log(productVersion);
     return {
       name: productVersion.name,
-      categories: productVersion.categories?.map((c: any) => ({ id: c, typeId: 'category' })),
-      // Unsupported right now, faking data
-      categoryOrderHints: {},
-      slug: productVersion.slug,
       description: productVersion.description,
-      masterVariant: this.toCTVariant(productVersion.variants[0]),
-      variants: productVersion.variants.slice(1).map((v: any) => this.toCTVariant(v)),
-      // TODO: Do it right when searchKeywords supports locale, assuming "en"
-      searchKeywords: {
-        en: (productVersion.searchKeywords ?? []).map((k: any) => {
-          return { text: k };
-        })
-      }
+      categories: productVersion.categories.map((c: any) => {
+        return { typeId: 'category', id: c };
+      }),
+      categoryOrderHints: {}, // Unsupported right now, faking data
+      slug: productVersion.slug,
+      masterVariant: this.toCTVariant(
+        productVersion.variants[0],
+        pricesVersion.filter((p: any) => p.sku === productVersion.variants[0].sku)
+      ),
+      variants: productVersion.variants.slice(1).map((v: any) =>
+        this.toCTVariant(
+          v,
+          pricesVersion.filter((p: any) => p.sku === v.sku)
+        )
+      ),
+      searchKeywords: productVersion.searchKeywords
     };
   }
 
@@ -133,75 +119,66 @@ export class CT {
     }, {});
   }
 
-  private toCTVariant(variant: any) {
-    return {
-      id: variant._id,
+  private toCTVariant(variant: any, prices: any) {
+    const v: any = {
+      id: variant._id.split('#')[1] ? parseInt(variant._id.split('#')[1]) : variant._id,
       sku: variant.sku,
-      // Unsupported right now, faking data
-      prices: this.toCTPrices(variant.prices),
+      prices: this.toCTPrices(prices),
       // Unsupported right now, faking data
       images: [],
       // TODO: Mix with Base Attributes
-      attributes: variant.attributes,
+      attributes: Object.entries(variant.attributes).map((a: any) => {
+        return { name: a[0], value: a[1] };
+      }),
       // Unsupported right now, faking data
       assets: [],
       // Unsupported right now, faking data
       availability: {}
     };
+    return v;
   }
 
   private ValidFields = ['country', 'customerGroup', 'channel', 'validFrom', 'validUntil', 'minimumQuantity'];
 
   private toCTPrices(pricesSource: any) {
-    const tokenized = pricesSource.map((price: any) => {
-      let gkey = '';
-      const tokens = [...price.predicate.matchAll(/(\w+[=<>][=<>]?[']?[^']+[']?)(?!: AND)?/g)].map((x: any) => {
-        let [key, value] = x[0].split('=');
-        if (key === 'date<') key = 'validUntil';
-        if (key === 'date>') key = 'validFrom';
-        if (key === 'minimumQuantity>') key = 'minimumQuantity';
-        value = value.replace(/'/g, '');
-        if (!this.ValidFields.includes(key)) throw new Error(`Invalid field: ${key}`);
-        if (key != 'minimumQuantity') gkey += `${key}=${value} `;
-        return { key, value };
-      });
-      return { key: gkey.trim(), tokens, price };
+    return pricesSource.map((price: any) => {
+      const basePrice = price.prices.find((p: any) => p.constraints.minimumQuantity === undefined);
+      const tiers =
+        price.prices.length > 1
+          ? price.prices
+              .filter((p: any) => p.constraints.minimumQuantity !== undefined)
+              .sort((a: any, b: any) => a.constraints.minimumQuantity > b.constraints.minimumQuantity)
+              .map((p: any) => {
+                return {
+                  minimumQuantity: p.constraints.minimumQuantity,
+                  value: p.value
+                };
+              })
+          : undefined;
+      console.log(price);
+      return Object.assign(
+        {
+          id: price.id,
+          value: basePrice.value
+        },
+        price.key && { key: price.key },
+        basePrice.constraints.country && { country: basePrice.constraints.country[0] },
+        basePrice.constraints.customerGroup && {
+          customerGroup: {
+            typeId: 'customer-group',
+            id: basePrice.constraints.customerGroup[0]
+          }
+        },
+        basePrice.constraints.channel && {
+          channel: {
+            typeId: 'channel',
+            id: basePrice.constraints.channel[0]
+          }
+        },
+        basePrice.constraints.validFrom && { validFrom: basePrice.constraints.validFrom },
+        basePrice.constraints.validUntil && { validUntil: basePrice.constraints.validUntil },
+        tiers && { tiers }
+      );
     });
-    const grouped = this.groupBy(tokenized, (p: any) => p.key);
-    const prices = Object.entries(grouped).map(([key, value]: any[]) => {
-      const result: any = {};
-      value.forEach((price: any) => {
-        const qToken = price.tokens.find((t: any) => t.key == 'minimumQuantity');
-        if (qToken) {
-          if (!result.tiers) result.tiers = [];
-          result.tiers.push({ minimumQuantity: new Number(qToken.value), value: price.price.value });
-        } else {
-          price.tokens.forEach((t: any) => {
-            switch (t.key) {
-              case 'country':
-                result.country = { typeId: 'country', id: t.value };
-                break;
-              case 'customerGroup':
-                result.customerGroup = { typeId: 'customer-group', id: t.value };
-                break;
-              case 'channel':
-                result.channel = { typeId: 'channel', id: t.value };
-                break;
-              case 'validFrom':
-                result.validFrom = t.value;
-                break;
-              case 'validUntil':
-                result.validUntil = t.value;
-                break;
-            }
-          });
-          result.value = price.price.value;
-          result.id = price.price.id.split('#')[0];
-          result.key = price.price.key.split('#')[0];
-        }
-      });
-      return result;
-    });
-    return prices;
   }
 }
