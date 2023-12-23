@@ -61,34 +61,40 @@ export class CT {
     const sp: any = this.toCTProductVersion(stagedProduct, stagedPrices);
     const op: any = onlineProduct ? this.toCTProductVersion(onlineProduct, onlinePrices) : {};
     const hasStagedChanges = Value.Diff(sp, op).length > 0;
-    return {
-      id: stagedProduct._id,
-      version: stagedProduct.version,
-      createdAt: stagedProduct.createdAt,
-      lastModifiedAt: stagedProduct.lastModifiedAt,
-      // TODO: Get the first Classification Category of the first Product Category
-      productType: {
-        typeId: 'product-type',
-        id: 'xxx-yyy-zzz'
+    return Object.assign(
+      {
+        id: stagedProduct._id,
+        version: stagedProduct.version,
+        createdAt: stagedProduct.createdAt,
+        lastModifiedAt: stagedProduct.lastModifiedAt,
+        // TODO: Get the first Classification Category of the first Product Category
+        productType: {
+          typeId: 'product-type',
+          id: 'xxx-yyy-zzz'
+        },
+        masterData: {
+          current: op,
+          staged: sp,
+          published: op.name ? true : false,
+          hasStagedChanges
+        }
       },
-      masterData: {
-        current: op,
-        staged: sp,
-        published: op.name ? true : false,
-        hasStagedChanges
-      },
-      // Unsupported right now, faking data
-      taxCategory: {
-        typeId: 'tax-category',
-        id: stagedProduct.taxCategory
-      },
-      priceMode: stagedProduct.priceMode
-    };
+      stagedProduct.key && { key: stagedProduct.key },
+      {
+        // Unsupported right now, faking data
+        taxCategory: {
+          typeId: 'tax-category',
+          id: stagedProduct.taxCategory
+        },
+        priceMode: stagedProduct.priceMode
+      }
+    );
   }
 
   private toCTProductVersion(productVersion: any, pricesVersion: any) {
-    //console.log(productVersion);
-    return {
+    let masterVariantIndex = productVersion.variants.findIndex((v: any) => v.attributes.isMasterVariant === true);
+    if (masterVariantIndex == -1) masterVariantIndex = 0;
+    return Object.assign({
       name: productVersion.name,
       description: productVersion.description,
       categories: productVersion.categories.map((c: any) => {
@@ -97,17 +103,17 @@ export class CT {
       categoryOrderHints: {}, // Unsupported right now, faking data
       slug: productVersion.slug,
       masterVariant: this.toCTVariant(
-        productVersion.variants[0],
-        pricesVersion.filter((p: any) => p.sku === productVersion.variants[0].sku)
+        productVersion.variants[masterVariantIndex],
+        pricesVersion.filter((p: any) => p.sku === productVersion.variants[masterVariantIndex].sku)
       ),
-      variants: productVersion.variants.slice(1).map((v: any) =>
+      variants: productVersion.variants.toSpliced(masterVariantIndex, 1).map((v: any) =>
         this.toCTVariant(
           v,
           pricesVersion.filter((p: any) => p.sku === v.sku)
         )
       ),
       searchKeywords: productVersion.searchKeywords
-    };
+    });
   }
 
   private groupBy(input: any, key: any) {
@@ -120,22 +126,27 @@ export class CT {
   }
 
   private toCTVariant(variant: any, prices: any) {
-    const v: any = {
-      id: variant._id.split('#')[1] ? parseInt(variant._id.split('#')[1]) : variant._id,
-      sku: variant.sku,
-      prices: this.toCTPrices(prices),
-      // Unsupported right now, faking data
-      images: [],
-      // TODO: Mix with Base Attributes
-      attributes: Object.entries(variant.attributes).map((a: any) => {
-        return { name: a[0], value: a[1] };
-      }),
-      // Unsupported right now, faking data
-      assets: [],
-      // Unsupported right now, faking data
-      availability: {}
-    };
-    return v;
+    return Object.assign(
+      {},
+      {
+        id: variant._id.split('#')[1] ? parseInt(variant._id.split('#')[1]) : variant._id,
+        sku: variant.sku
+      },
+      variant.key && { key: variant.key },
+      {
+        prices: this.toCTPrices(prices),
+        // Unsupported right now, faking data
+        images: [],
+        // TODO: Mix with Base Attributes
+        attributes: Object.entries(variant.attributes).map((a: any) => {
+          return { name: a[0], value: a[1] };
+        }),
+        // Unsupported right now, faking data
+        assets: [],
+        // Unsupported right now, faking data
+        availability: {}
+      }
+    );
   }
 
   private ValidFields = ['country', 'customerGroup', 'channel', 'validFrom', 'validUntil', 'minimumQuantity'];
@@ -155,7 +166,6 @@ export class CT {
                 };
               })
           : undefined;
-      console.log(price);
       return Object.assign(
         {
           id: price.id,
