@@ -14,6 +14,16 @@ export class CT {
   private server: any;
   public api: ByProjectKeyRequestBuilder;
 
+  public PriceMode = {
+    STANDALONE: 'Standalone',
+    EMBEDDED: 'Embedded'
+  };
+
+  public Catalog = {
+    STAGED: 'staged',
+    CURRENT: 'current'
+  };
+
   public constructor(server: any) {
     this.server = server;
     this.api = this.apiBuilder();
@@ -57,9 +67,9 @@ export class CT {
     return createApiBuilderFromCtpClient(ctpClient).withProjectKey({ projectKey });
   };
 
-  public toCTProduct(stagedProduct: any, onlineProduct: any, stagedPrices: any, onlinePrices: any): any {
-    const sp: any = this.toCTProductVersion(stagedProduct, stagedPrices);
-    const op: any = onlineProduct ? this.toCTProductVersion(onlineProduct, onlinePrices) : {};
+  public toCTProduct(stagedProduct: any, onlineProduct: any): any {
+    const sp: any = this.toCTProductVersion(stagedProduct);
+    const op: any = onlineProduct ? this.toCTProductVersion(onlineProduct) : {};
     const hasStagedChanges = Value.Diff(sp, op).length > 0;
     return Object.assign(
       {
@@ -91,9 +101,10 @@ export class CT {
     );
   }
 
-  private toCTProductVersion(productVersion: any, pricesVersion: any) {
+  private toCTProductVersion(productVersion: any) {
     let masterVariantIndex = productVersion.variants.findIndex((v: any) => v.attributes.isMasterVariant === true);
     if (masterVariantIndex == -1) masterVariantIndex = 0;
+    console.log(productVersion.priceMode);
     return Object.assign({
       name: productVersion.name,
       description: productVersion.description,
@@ -104,25 +115,22 @@ export class CT {
       slug: productVersion.slug,
       masterVariant: this.toCTVariant(
         productVersion.variants[masterVariantIndex],
-        pricesVersion.filter((p: any) => p.sku === productVersion.variants[masterVariantIndex].sku)
+        productVersion.priceMode === this.PriceMode.EMBEDDED
+          ? productVersion.prices.filter((p: any) => p.sku === productVersion.variants[masterVariantIndex].sku)
+          : []
       ),
-      variants: productVersion.variants.toSpliced(masterVariantIndex, 1).map((v: any) =>
-        this.toCTVariant(
-          v,
-          pricesVersion.filter((p: any) => p.sku === v.sku)
-        )
-      ),
+      variants: productVersion.variants
+        .toSpliced(masterVariantIndex, 1)
+        .map((v: any) =>
+          this.toCTVariant(
+            v,
+            productVersion.priceMode === this.PriceMode.EMBEDDED
+              ? productVersion.prices.filter((p: any) => p.sku === v.sku)
+              : []
+          )
+        ),
       searchKeywords: productVersion.searchKeywords
     });
-  }
-
-  private groupBy(input: any, key: any) {
-    return input.reduce((acc: any, currentValue: any) => {
-      let groupKey = key(currentValue);
-      if (!acc[groupKey]) acc[groupKey] = [];
-      acc[groupKey].push(currentValue);
-      return acc;
-    }, {});
   }
 
   private toCTVariant(variant: any, prices: any) {
@@ -148,8 +156,6 @@ export class CT {
       }
     );
   }
-
-  private ValidFields = ['country', 'customerGroup', 'channel', 'validFrom', 'validUntil', 'minimumQuantity'];
 
   private toCTPrices(pricesSource: any) {
     return pricesSource.map((price: any) => {

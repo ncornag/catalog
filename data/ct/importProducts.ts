@@ -13,19 +13,9 @@ const server = {
   config: process.env
 };
 
-enum PriceMode {
-  STANDALONE = 'Standalone',
-  EMBEDDED = 'Embedded'
-}
-
 enum VersionSuffix {
   STAGE = 'Stage',
   ONLINE = 'Online'
-}
-
-enum Catalog {
-  STAGED = 'staged',
-  CURRENT = 'current'
 }
 
 class ProductImporter {
@@ -45,6 +35,10 @@ class ProductImporter {
     validFrom: { operator: '>=', field: 'date', type: 'date' },
     validUntil: { operator: '<=', field: 'date', type: 'date' },
     minimumQuantity: { operator: '>=', field: 'quantity', type: 'number' }
+  };
+  private Catalog = {
+    STAGE: 'stage',
+    ONLINE: 'online'
   };
 
   constructor(server: any, stageSufix: string, currentSufix: string) {
@@ -84,14 +78,13 @@ class ProductImporter {
 
   private createProduct(p: Product, projectId: string, catalog: string): any {
     const c = p.masterData[catalog];
-    console.log(p.key);
     return Object.assign(
       {},
       {
         _id: p.id,
         version: p.version,
         projectId,
-        catalog: catalog === Catalog.STAGED ? Catalog.STAGED : Catalog.CURRENT,
+        catalog: catalog === this.ct.Catalog.STAGED ? this.Catalog.STAGE : this.Catalog.ONLINE,
         type: 'base',
         createdAt: p.createdAt,
         name: c.name,
@@ -100,9 +93,9 @@ class ProductImporter {
           return c.id;
         }),
         searchKeywords: c.searchKeywords,
-        priceMode: p.priceMode,
-        taxCategory: p.taxCategory?.id
+        priceMode: p.priceMode || this.ct.PriceMode.EMBEDDED
       },
+      p.taxCategory && { taxCategory: p.taxCategory.id },
       c.description && { description: c.description },
       p.key && { key: p.key },
       p.lastModifiedAt && { lastModifiedAt: p.lastModifiedAt }
@@ -116,17 +109,16 @@ class ProductImporter {
         _id: p.id + '#' + v.id,
         version: p.version,
         projectId,
-        catalog: catalog === Catalog.STAGED ? Catalog.STAGED : Catalog.CURRENT,
+        catalog: catalog === this.ct.Catalog.STAGED ? this.Catalog.STAGE : this.Catalog.ONLINE,
         createdAt: p.createdAt,
         type: 'variant',
         parent: parent,
-        sku: v.sku,
         attributes: v.attributes?.reduce((acc: any, a: any) => {
           acc[a.name] = a.value;
           return acc;
-        }, {}),
-        priceMode: p.priceMode
+        }, {})
       },
+      v.sku && { sku: v.sku },
       v.key && { key: v.key },
       p.lastModifiedAt && { lastModifiedAt: p.lastModifiedAt }
     );
@@ -147,7 +139,7 @@ class ProductImporter {
         _id: price.id,
         version: p.version,
         projectId,
-        catalog: catalog === Catalog.STAGED ? Catalog.STAGED : Catalog.CURRENT,
+        catalog: catalog === this.ct.Catalog.STAGED ? this.Catalog.STAGE : this.Catalog.ONLINE,
         createdAt: p.createdAt,
         sku: v.sku,
         active: true,
@@ -191,7 +183,6 @@ class ProductImporter {
       offset,
       withTotal: false,
       sort: 'id asc',
-      //where: 'id = "57d89fc3-2034-4c3d-b2e1-5617a32bdb45" or id = "6a3736e4-eaba-416c-87f0-77612f9bb265"'
       where: `sku = "${variant.sku}"`
     };
     do {
@@ -270,9 +261,9 @@ class ProductImporter {
       const variant = product.masterData[catalog].variants[v];
       products.push(this.createVariant(variant, product, projectId, catalog, base._id));
       // Import Prices
-      if (product.priceMode === PriceMode.EMBEDDED) {
+      if (product.priceMode === this.ct.PriceMode.EMBEDDED) {
         prices.push(...this.createPrices(variant, product, projectId, catalog));
-      } else if (product.priceMode === PriceMode.STANDALONE) {
+      } else if (product.priceMode === this.ct.PriceMode.STANDALONE) {
         const standAlonePrices = await this.createStandalonePrices(variant, product, projectId, catalog);
         prices.push(...standAlonePrices);
       }
@@ -311,6 +302,8 @@ class ProductImporter {
       withTotal: false,
       sort: 'id asc'
       //where: 'id = "57d89fc3-2034-4c3d-b2e1-5617a32bdb45" or id = "6a3736e4-eaba-416c-87f0-77612f9bb265"'
+      //where: 'id="fff9dfc4-5b4e-470a-b88f-adc402c4ee72"'
+      //where: 'id="57d89fc3-2034-4c3d-b2e1-5617a32bdb45"'
     };
     do {
       if (lastId != null) {
@@ -324,9 +317,15 @@ class ProductImporter {
         )}`
       );
       for (let p = 0; p < body.results.length; p++) {
-        await this.importCatalogProduct(Catalog.STAGED, this.projectId, body.results[p], stagedProducts, stagedPrices);
         await this.importCatalogProduct(
-          Catalog.CURRENT,
+          this.ct.Catalog.STAGED,
+          this.projectId,
+          body.results[p],
+          stagedProducts,
+          stagedPrices
+        );
+        await this.importCatalogProduct(
+          this.ct.Catalog.CURRENT,
           this.projectId,
           body.results[p],
           currentProducts,

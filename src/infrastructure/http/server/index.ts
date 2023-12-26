@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 import * as color from 'kolorist';
 color.options.supportLevel = 2; // Hack for fastify-request-logger@1.3.0 to allow 'supportsArt'
 
@@ -33,7 +35,7 @@ export const createServer = async (): Promise<FastifyInstance> => {
   // Logger options per environment
   const envToLogger: any = {
     development: {
-      level: 'info',
+      level: process.env.LOGLEVEL,
       transport: {
         target: '@mgcrea/pino-pretty-compact',
         options: {
