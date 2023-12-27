@@ -104,7 +104,6 @@ export class CT {
   private toCTProductVersion(productVersion: any) {
     let masterVariantIndex = productVersion.variants.findIndex((v: any) => v.attributes.isMasterVariant === true);
     if (masterVariantIndex == -1) masterVariantIndex = 0;
-    console.log(productVersion.priceMode);
     return Object.assign({
       name: productVersion.name,
       description: productVersion.description,
@@ -135,7 +134,6 @@ export class CT {
 
   private toCTVariant(variant: any, prices: any) {
     return Object.assign(
-      {},
       {
         id: variant._id.split('#')[1] ? parseInt(variant._id.split('#')[1]) : variant._id,
         sku: variant.sku
@@ -159,10 +157,10 @@ export class CT {
 
   private toCTPrices(pricesSource: any) {
     return pricesSource.map((price: any) => {
-      const basePrice = price.prices.find((p: any) => p.constraints.minimumQuantity === undefined);
+      const basePrice = price.predicates.find((p: any) => p.constraints.minimumQuantity === undefined);
       const tiers =
-        price.prices.length > 1
-          ? price.prices
+        price.predicates.length > 1
+          ? price.predicates
               .filter((p: any) => p.constraints.minimumQuantity !== undefined)
               .sort((a: any, b: any) => a.constraints.minimumQuantity > b.constraints.minimumQuantity)
               .map((p: any) => {
@@ -174,7 +172,7 @@ export class CT {
           : undefined;
       return Object.assign(
         {
-          id: price.id,
+          id: price._id,
           value: basePrice.value
         },
         price.key && { key: price.key },

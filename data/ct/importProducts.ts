@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { CT } from '../../src/core/lib/ct';
-import { Db, Collection, MongoClient } from 'mongodb';
+import { FieldPredicateOperators, createPredicateExpression } from '../../src/core/services/price.svc';
+import { Db, MongoClient } from 'mongodb';
 import {
   Product,
   ProductPagedQueryResponse,
@@ -26,16 +27,8 @@ class ProductImporter {
   private productCollectionName = 'Product';
   private pricesCollectionName = 'Prices';
   private col: any = {};
-  private logCount = 1000;
+  private logCount = 100;
   private projectId = 'TestProject';
-  private fieldPredicateOperators = {
-    country: { operator: 'in', field: 'country', type: 'array' },
-    customerGroup: { operator: 'in', field: 'customerGroup', type: 'array', typeId: 'customer-group' },
-    channel: { operator: 'in', field: 'channel', type: 'array', typeId: 'channel' },
-    validFrom: { operator: '>=', field: 'date', type: 'date' },
-    validUntil: { operator: '<=', field: 'date', type: 'date' },
-    minimumQuantity: { operator: '>=', field: 'quantity', type: 'number' }
-  };
   private Catalog = {
     STAGE: 'stage',
     ONLINE: 'online'
@@ -79,7 +72,6 @@ class ProductImporter {
   private createProduct(p: Product, projectId: string, catalog: string): any {
     const c = p.masterData[catalog];
     return Object.assign(
-      {},
       {
         _id: p.id,
         version: p.version,
@@ -104,7 +96,6 @@ class ProductImporter {
 
   private createVariant(v: ProductVariant, p: Product, projectId: string, catalog: string, parent: string): any {
     return Object.assign(
-      {},
       {
         _id: p.id + '#' + v.id,
         version: p.version,
@@ -124,6 +115,23 @@ class ProductImporter {
     );
   }
 
+  private createConstraints(data: any, tier: any, price: any) {
+    return Object.entries(data).reduce((acc: any, [key, value]: [string, any]) => {
+      let dataValue = price[key] || tier[key];
+      if (!dataValue) return acc;
+      if (value.type === 'array' && value.typeId) {
+        acc[key] = [dataValue.id];
+      } else if (value.type === 'array') {
+        acc[key] = [dataValue];
+      } else if (value.type === 'number') {
+        acc[key] = +dataValue;
+      } else {
+        acc[key] = dataValue;
+      }
+      return acc;
+    }, {});
+  }
+
   private createPrice(
     price: any,
     order: number,
@@ -134,7 +142,6 @@ class ProductImporter {
   ): any {
     const tiers: any = [{ value: price.value }].concat(price.tiers ?? []);
     return Object.assign(
-      {},
       {
         _id: price.id,
         version: p.version,
@@ -143,18 +150,21 @@ class ProductImporter {
         createdAt: p.createdAt,
         sku: v.sku,
         active: true,
-        prices: tiers
+        predicates: tiers
           .sort((a: any, b: any) => {
             return a.minimumQuantity < b.minimumQuantity;
           })
           .map((tier: any) => {
-            let constraints = this.createConstraints(this.fieldPredicateOperators, tier, price);
-            return {
-              order: order++,
-              value: tier.value,
-              constraints,
-              predicate: this.createPredicate(constraints)
-            };
+            let constraints = this.createConstraints(FieldPredicateOperators, tier, price);
+            let expression = createPredicateExpression(constraints);
+            return Object.assign(
+              {
+                order: order++,
+                value: tier.value,
+                constraints
+              },
+              expression && { expression }
+            );
           })
       },
       price.key && { key: price.key },
@@ -171,7 +181,7 @@ class ProductImporter {
 
   private async createStandalonePrices(variant: ProductVariant, product: Product, projectId: string, catalog: string) {
     const prices: any[] = [];
-    const pageSize = 500;
+    const pageSize = 100;
     let limit = pageSize;
     let offset = 0;
     let body: StandalonePricePagedQueryResponse = { limit: 0, offset: 0, count: 0, results: [] };
@@ -191,11 +201,11 @@ class ProductImporter {
         delete queryArgs.offset;
       }
       let body = (await this.ct.api.standalonePrices().get({ queryArgs }).execute()).body;
-      console.log(
-        `${green('Prices')}: ${body.offset} limit: ${body.limit} count: ${body.count} query: ${JSON.stringify(
-          queryArgs
-        )}`
-      );
+      // console.log(
+      //   `${green('Prices')}: ${body.offset} limit: ${body.limit} count: ${body.count} query: ${JSON.stringify(
+      //     queryArgs
+      //   )}`
+      // );
       let order = 1;
       for (let p = 0; p < body.results.length; p++) {
         prices.push(this.createPrice(body.results[p], order, variant, product, projectId, catalog));
@@ -205,47 +215,6 @@ class ProductImporter {
       offset = body.offset + body.count;
     } while (body.count > 0);
     return prices;
-  }
-
-  private surroundByQuotes(value: any) {
-    return typeof value === 'string' ? `'${value}'` : value;
-  }
-  private createConstraints(data: any, tier: any, price: any) {
-    return Object.entries(data).reduce((acc: any, [key, value]: [string, any]) => {
-      let dataValue = price[key] || tier[key];
-      if (!dataValue) return acc;
-      if (value.type === 'array' && value.typeId) {
-        acc[key] = [dataValue.id];
-      } else if (value.type === 'array') {
-        acc[key] = [dataValue];
-      } else if (value.type === 'number') {
-        acc[key] = +dataValue;
-      } else {
-        acc[key] = dataValue;
-      }
-      return acc;
-    }, {});
-  }
-  private createPredicate(data: any) {
-    let predicate = Object.entries(data).reduce((acc, [key, value]) => {
-      if (acc) acc += ' and ';
-      let op = this.fieldPredicateOperators[key] ? this.fieldPredicateOperators[key].operator : '=';
-      let field = this.fieldPredicateOperators[key] ? this.fieldPredicateOperators[key].field : key;
-      let val: any = value;
-      if (op === 'in') {
-        if (!Array.isArray(val)) val = [val];
-        if (val.length > 1) acc += '(';
-        for (let i = 0; i < val.length; i++) {
-          if (i > 0) acc += ' or ';
-          acc += `${this.surroundByQuotes(val[i])} in ${field}`;
-        }
-        if (val.length > 1) acc += ')';
-      } else {
-        acc += `${field}${op}${this.surroundByQuotes(val)}`;
-      }
-      return acc;
-    }, '');
-    return predicate;
   }
 
   private async importCatalogProduct(catalog: string, projectId: string, product, products, prices) {
@@ -275,7 +244,7 @@ class ProductImporter {
     const stagedPrices: any[] = [];
     const currentProducts: any[] = [];
     const currentPrices: any[] = [];
-    const pageSize = 500;
+    const pageSize = 100;
     let limit = productsToImport > pageSize ? pageSize : productsToImport;
     let offset = firstProductToImport;
     let body: ProductPagedQueryResponse;
@@ -307,15 +276,15 @@ class ProductImporter {
     };
     do {
       if (lastId != null) {
-        queryArgs.where = `id > "${lastId}'`;
+        queryArgs.where = `id > "${lastId}"`;
         delete queryArgs.offset;
       }
       body = (await this.ct.api.products().get({ queryArgs }).execute()).body;
-      console.log(
-        `${green('Products')}: offset: ${body.offset} limit: ${body.limit} count: ${body.count} query: ${JSON.stringify(
-          queryArgs
-        )}`
-      );
+      // console.log(
+      //   `${green('Products')}: offset: ${body.offset} limit: ${body.limit} count: ${body.count} query: ${JSON.stringify(
+      //     queryArgs
+      //   )}`
+      // );
       for (let p = 0; p < body.results.length; p++) {
         await this.importCatalogProduct(
           this.ct.Catalog.STAGED,

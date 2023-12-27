@@ -15,6 +15,38 @@ const toEntity = ({ _id, ...remainder }: PriceDAO): Price => ({
   ...remainder
 });
 
+export const FieldPredicateOperators: any = {
+  country: { operator: 'in', field: 'country', type: 'array' },
+  customerGroup: { operator: 'in', field: 'customerGroup', type: 'array', typeId: 'customer-group' },
+  channel: { operator: 'in', field: 'channel', type: 'array', typeId: 'channel' },
+  validFrom: { operator: '>=', field: 'date', type: 'date' },
+  validUntil: { operator: '<=', field: 'date', type: 'date' },
+  minimumQuantity: { operator: '>=', field: 'quantity', type: 'number' }
+};
+
+export function createPredicateExpression(data: any) {
+  const surroundByQuotes = (value: any) => (typeof value === 'string' ? `'${value}'` : value);
+  let predicate = Object.entries(data).reduce((acc, [key, value]) => {
+    if (acc) acc += ' and ';
+    let op = FieldPredicateOperators[key] ? FieldPredicateOperators[key].operator : '=';
+    let field = FieldPredicateOperators[key] ? FieldPredicateOperators[key].field : key;
+    let val: any = value;
+    if (op === 'in') {
+      if (!Array.isArray(val)) val = [val];
+      if (val.length > 1) acc += '(';
+      for (let i = 0; i < val.length; i++) {
+        if (i > 0) acc += ' or ';
+        acc += `${surroundByQuotes(val[i])} in ${field}`;
+      }
+      if (val.length > 1) acc += ')';
+    } else {
+      acc += `${field}${op}${surroundByQuotes(val)}`;
+    }
+    return acc;
+  }, '');
+  return predicate === '' ? undefined : predicate;
+}
+
 // SERVICE IMPLEMENTATION
 export class PriceService implements IPriceService {
   private static instance: IPriceService;

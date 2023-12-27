@@ -10,6 +10,12 @@
 - [X] Catalog Sync
 - [X] i18n Strings fields
 - [X] Search
+- [X] Prices
+- [X] commercetools layer
+  - [/] Import Products with Prices
+  - [X] v1/getProduct endpoint
+- [X] Create Random Products & Prices
+- [X] Promotions
 - [ ] Review Enum/List/Set attribute types
 - [ ] Images/Assets fields
 - [ ] Reference fields
@@ -41,5 +47,4 @@ from https://miro.com/app/board/uXjVMFprX3M=/
   - Faceted search and filtering
 - Import/export
 - Sizes conversion
-- Prices
 - Discounts
