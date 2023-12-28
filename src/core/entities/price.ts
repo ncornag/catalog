@@ -37,8 +37,9 @@ export const PriceSchema = Type.Object(
     catalog: Type.String(),
     key: Type.Optional(Type.String()),
     active: Type.Boolean({ default: false }),
+    order: Type.Number(),
     sku: Type.String(),
-    prices: Type.Array(PredicateSchema),
+    predicates: Type.Array(PredicateSchema),
     ...AuditFields
   },
   { additionalProperties: false }

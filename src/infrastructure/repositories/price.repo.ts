@@ -39,7 +39,7 @@ export class PriceRepository implements IPriceRepository {
   async find(catalogId: string, query: any, options: any = {}): Promise<Result<PriceDAO[], AppError>> {
     // TODO: Add query limit
     const catAwareCol = this.col[catalogId];
-    const entities = await catAwareCol.find(query).toArray();
+    const entities = await catAwareCol.find(query, options).toArray();
     return new Ok(entities);
   }
 

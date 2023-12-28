@@ -26,8 +26,10 @@ import productRoutes from '@infrastructure/http/routes/product.routes';
 import productRoutesV1 from '@infrastructure/http/routes/productV1.routes';
 import catalogRoutes from '@infrastructure/http/routes/catalog.routes';
 import catalogSyncRoutes from '@infrastructure/http/routes/catalogSync.routes';
+import cartRoutes from '@infrastructure/http/routes/cart.routes';
 import auditLogRoutes from '@infrastructure/http/routes/auditLog.routes';
 import typesense from '@infrastructure/search/plugins/typesense';
+import priceRoutes from '../routes/price.routes';
 
 export const createServer = async (): Promise<FastifyInstance> => {
   const environment = process.env.NODE_ENV ?? 'production';
@@ -35,7 +37,7 @@ export const createServer = async (): Promise<FastifyInstance> => {
   // Logger options per environment
   const envToLogger: any = {
     development: {
-      level: process.env.LOGLEVEL,
+      level: process.env.LOG_LEVEL,
       transport: {
         target: '@mgcrea/pino-pretty-compact',
         options: {
@@ -106,10 +108,12 @@ export const createServer = async (): Promise<FastifyInstance> => {
   // Load Routes
   await server.register(classificationCategoryRoutes, { prefix: '/classificationCategories' });
   await server.register(productCategoryRoutes, { prefix: '/productCategories' });
-  await server.register(productRoutes, { prefix: '/products' });
+  await server.register(productRoutes, { prefix: '/product' });
   await server.register(productRoutesV1, { prefix: '/v1/products' });
   await server.register(catalogRoutes, { prefix: '/catalog' });
   await server.register(catalogSyncRoutes, { prefix: '/catalogSync' });
+  await server.register(priceRoutes, { prefix: '/price' });
+  await server.register(cartRoutes, { prefix: '/cart' });
   await server.register(auditLogRoutes, { prefix: '/auditLog' });
 
   // Load Listeners

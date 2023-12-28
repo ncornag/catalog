@@ -3,6 +3,7 @@ import { AppError, ErrorCode } from '@core/lib/appError';
 import { Value } from '@sinclair/typebox/value';
 import { nanoid } from 'nanoid';
 import { type Product, UpdateProductAction, ProductType } from '@core/entities/product';
+import { type CartProduct } from '@core/entities/cart';
 import { type CreateProductBody } from '@infrastructure/http/schemas/product.schemas';
 import { ProductDAO } from '@infrastructure/repositories/dao/product.dao.schema';
 import { ActionHandlersList } from '@core/services/actions';
@@ -18,6 +19,7 @@ export interface IProductService {
   createProduct: (catalogId: string, payload: CreateProductBody) => Promise<Result<Product, AppError>>;
   updateProduct: (catalogId: string, id: string, version: number, actions: any) => Promise<Result<Product, AppError>>;
   findProductById: (catalogId: string, id: string, materialized: boolean) => Promise<Result<Product, AppError>>;
+  cartProducById: (catalogId: string, ids: string[], lang: string) => Promise<Result<CartProduct[], AppError>>;
 }
 
 const toEntity = ({ _id, ...remainder }: ProductDAO): Product => ({
@@ -174,22 +176,85 @@ export class ProductService implements IProductService {
         delete entity.base;
       } else if (entity.type === ProductType.VARIANT) {
         entity.inheritedFields = [];
-        if (!entity.name) {
-          entity.name = entity.base[0].name;
-          entity.inheritedFields.push('name');
-        }
-        if (entity.base[0].searchKeywords.length > 0) {
-          (entity.searchKeywords ?? (entity.searchKeywords = [])).concat(entity.base[0].searchKeywords);
-          entity.inheritedFields.push('searchKeywords');
-        }
-        if (entity.base[0].categories.length > 0) {
-          (entity.categories ?? (entity.categories = [])).concat(entity.base[0].categories);
-          entity.inheritedFields.push('categories');
-        }
+        this.inheritFields(entity, undefined);
         delete entity.base;
         delete entity.variants;
       }
       return new Ok(toEntity(entity));
+    }
+  }
+
+  public async cartProducById(
+    catalogId: string,
+    ids: string[],
+    lang: string
+  ): Promise<Result<CartProduct[], AppError>> {
+    const result = await this.repo.aggregate(catalogId, [
+      {
+        $match: {
+          _id: { $in: ids }
+        }
+      },
+      {
+        $lookup: {
+          from: this.cols[catalogId].collectionName,
+          localField: 'parent',
+          foreignField: '_id',
+          as: 'base'
+        }
+      },
+      {
+        $project: {
+          parent: 1,
+          sku: 1,
+          attributes: 1,
+          'base.name': 1,
+          'base.description': 1,
+          'base.searchKeywords': 1,
+          'base.categories': 1
+        }
+      }
+    ]);
+    if (result.err) return result;
+    if (result.val.length === 0) return new Err(new AppError(ErrorCode.NOT_FOUND, 'Product not found'));
+    result.val.forEach((entity) => {
+      entity.inheritedFields = [];
+      this.inheritFields(entity, lang);
+      delete entity.base;
+    });
+    return new Ok(
+      result.val.map((entity) => {
+        return {
+          productId: entity._id,
+          sku: entity.sku,
+          name: entity.name,
+          categories: entity.categories
+        };
+      })
+    );
+  }
+
+  private inheritFields(entity: any, lang?: string) {
+    entity.inheritedFields = [];
+    if (!entity.name) {
+      entity.name = lang ? entity.base[0].name[lang] : entity.base[0].name;
+      entity.inheritedFields.push('name');
+    }
+    if (!entity.description) {
+      entity.description = lang ? entity.base[0].description[lang] : entity.base[0].description;
+      entity.inheritedFields.push('description');
+    }
+    if (entity.base[0].searchKeywords) {
+      entity.searchKeywords = entity.searchKeywords ?? {};
+      Object.entries(entity.base[0].searchKeywords).forEach(([key, value]: [string, any]) => {
+        entity.searchKeywords[key] = (entity.searchKeywords[key] ?? []).concat(...value);
+      });
+      entity.searchKeywords = lang ? entity.searchKeywords[lang] : entity.searchKeywords;
+      entity.inheritedFields.push('searchKeywords');
+    }
+    if (entity.base[0].categories.length > 0) {
+      entity.categories = (entity.categories ?? []).concat(...entity.base[0].categories);
+      entity.inheritedFields.push('categories');
     }
   }
 }

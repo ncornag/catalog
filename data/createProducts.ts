@@ -1,9 +1,12 @@
 import 'dotenv/config';
-import { fakerEN, fakerDE } from '@faker-js/faker';
+import { fakerEN, fakerDE, Randomizer } from '@faker-js/faker';
 import { Db, MongoClient } from 'mongodb';
 import { CT } from '../src/core/lib/ct';
 import { createPredicateExpression } from '../src/core/services/price.svc';
 import { nanoid } from 'nanoid';
+
+fakerEN.seed(7);
+fakerDE.seed(7);
 
 function randomIntFromInterval(min: number, max: number) {
   // min and max included
@@ -42,7 +45,7 @@ class ProductCreator {
     channel: this.channels,
     customerGroup: this.customerGroups
   };
-  private constraintsOrder = [[], ['country'], ['channel'], ['customerGroup']];
+  private constraintsOrder = [['country'], ['channel'], ['customerGroup']];
 
   constructor(server: any, stageSufix: string, currentSufix: string) {
     this.server = server;
@@ -111,7 +114,11 @@ class ProductCreator {
 
   public createVariant(projectId: string, catalog: string, parent: string, pricesPerVariant: number): any {
     let sku = fakerEN.commerce.isbn(13);
-    let prices = Array.from({ length: pricesPerVariant }, (_, i) => this.createPrice(projectId, catalog, sku));
+    let order = 1;
+    let prices = Array.from({ length: pricesPerVariant }, (_, i) =>
+      this.createPrice(projectId, catalog, sku, order++, this.constraintsOrder)
+    );
+    prices.push(this.createPrice(projectId, catalog, sku, order++, [[]]));
     return [
       {
         _id: nanoid(),
@@ -131,7 +138,7 @@ class ProductCreator {
     ];
   }
 
-  public createPrice(projectId: string, catalog: string, sku: string): any {
+  public createPrice(projectId: string, catalog: string, sku: string, order: number, constraintsOrder: any): any {
     const centAmount = randomIntFromInterval(1000, 10000);
     let constraintsAcc = {};
     return {
@@ -140,10 +147,11 @@ class ProductCreator {
       projectId,
       catalog,
       createdAt: new Date().toISOString(),
+      order,
       sku,
       active: true,
-      predicates: Array.from({ length: 4 }, (_, i) => {
-        let constraints = this.constraintsOrder[i].reduce((acc: any, curr: any) => {
+      predicates: Array.from({ length: constraintsOrder.length }, (_, i) => {
+        let constraints = constraintsOrder[i].reduce((acc: any, curr: any) => {
           acc[curr] = [this.constraintsValues[curr][randomIntFromInterval(0, this.constraintsValues[curr].length - 1)]];
           constraintsAcc[curr] = acc[curr];
           return acc;
@@ -151,7 +159,7 @@ class ProductCreator {
         let expression = createPredicateExpression(constraints);
         return Object.assign(
           {
-            order: 4 - i,
+            order: constraintsOrder.length - i,
             value: {
               type: 'centPrecision',
               currencyCode: 'EUR',
