@@ -8,7 +8,7 @@ export class Expressions {
     this.server = server;
   }
 
-  getExpression(expression: string): Expression {
+  public getExpression(expression: string): Expression {
     let compiled: Expression | undefined = this.cache.get(expression);
     if (!compiled) {
       compiled = jsonata(expression);

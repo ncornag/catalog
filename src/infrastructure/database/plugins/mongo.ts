@@ -187,6 +187,7 @@ export default fp(async function (server: FastifyInstance) {
   );
   Object.keys(server.db.col.product).forEach((key) => {
     indexes.push(server.db.col.product[key].createIndex({ parent: 1 }, { name: 'parent' }));
+    indexes.push(server.db.col.product[key].createIndex({ sku: 1 }, { name: 'sku' }));
   });
   Object.keys(server.db.col.price).forEach((key) => {
     indexes.push(server.db.col.price[key].createIndex({ sku: 1 }, { name: 'sku' }));

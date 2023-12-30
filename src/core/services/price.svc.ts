@@ -8,6 +8,8 @@ import { Cart, CartItem, CartProduct } from '@core/entities/cart';
 import { IProductService, ProductService } from './product.svc';
 import { green, magenta, yellow, gray, reset } from 'kolorist';
 import { Expressions } from '@core/lib/expressions';
+import fetch from 'node-fetch';
+import { timeStamp } from 'console';
 
 // SERVICE INTERFACE
 export interface IPriceService {
@@ -60,12 +62,33 @@ export class PriceService implements IPriceService {
   private productService: IProductService;
   private expressions: Expressions;
   private server;
+  private promotionsUrl: string;
 
   private constructor(server: any) {
     this.server = server;
     this.repo = server.db.repo.priceRepository as IPriceRepository;
     this.productService = ProductService.getInstance(server);
     this.expressions = new Expressions(server);
+    this.promotionsUrl = server.config.PROMOTIONS_URL;
+    this.warmupPricesExpressions(server);
+  }
+  private async warmupPricesExpressions(server: any) {
+    // Get all price expressions and compile them
+    const start = process.hrtime.bigint();
+    const result = await this.repo.aggregate('stage', [
+      { $match: { 'predicates.expression': { $exists: true } } },
+      { $unwind: '$predicates' },
+      { $project: { expression: '$predicates.expression', _id: 0 } }
+    ]);
+    if (result.err) return result;
+    const expressions = result.val;
+    expressions.forEach((e: any) => {
+      this.expressions.getExpression(e.expression);
+    });
+    const end = process.hrtime.bigint();
+    server.log.info(
+      `${green('Warmup Price Expressions')} ${expressions.length} in ${magenta(Number(end - start) / 1000000)}ms`
+    );
   }
 
   public static getInstance(server: any): IPriceService {
@@ -85,15 +108,14 @@ export class PriceService implements IPriceService {
       catalogId,
       {
         sku: { $in: skus },
-        active: true,
-        $or: [{ 'predicates.constraints.country': 'ES' }, { 'predicates.constraints.country': { $exists: false } }]
+        active: true
+        //,$or: [{ 'predicates.constraints.country': 'IT' }, { 'predicates.constraints.country': { $exists: false } }]
       },
       {
-        projection: { order: 1, sku: 1, 'predicates.order': 1, 'predicates.vaue': 1, 'predicates.expression': 1 }
+        projection: { order: 1, sku: 1, 'predicates.order': 1, 'predicates.value': 1, 'predicates.expression': 1 }
       }
     );
     if (result.err) return result;
-    console.log(result.val.length);
     return new Ok(result.val.map((e: PriceDAO) => toEntity(e)));
   }
 
@@ -122,41 +144,54 @@ export class PriceService implements IPriceService {
   }
 
   public async createCart(data: any): Promise<Result<any, AppError>> {
-    // TODO Refactor cartData (Lang + Country/CustomerGroup/Channel)
+    // TODO Refactor cartData (Locale + Country/CustomerGroup/Channel)
     const cart: Cart = Object.assign(
-      { id: nanoid(), items: [] },
+      { id: nanoid() },
       data.country && { country: data.country },
       data.customerGroup && { customerGroup: data.customerGroup },
       data.channel && { channel: data.channel },
-      data.lang && { lang: data.lang }
+      data.locale && { locale: data.locale },
+      { items: [] }
     );
 
     const facts = Object.assign(
       data.country && { country: data.country },
       data.customerGroup && { customerGroup: data.customerGroup },
       data.channel && { channel: data.channel },
-      data.lang && { lang: data.lang }
+      data.locale && { locale: data.locale }
     );
 
     // Find Products
+    let start = process.hrtime.bigint();
     const cartProductsResult = await this.productService.cartProducById(
       'stage',
-      data.items.map((item: CartItem) => item.productId),
-      data.lang
+      data.items.map((item: CartProduct) => item.productId),
+      data.locale
     );
     if (cartProductsResult.err) return cartProductsResult;
     const cartProducts = cartProductsResult.val;
+    let end = process.hrtime.bigint();
+    this.server.log.info(
+      `${green('  Find Products')} ${cartProducts.length} in ${magenta(Number(end - start) / 1000000)}ms`
+    );
 
     // Find Prices
+    start = process.hrtime.bigint();
     const pricesResult = await this.getCartPricesForSKU(
       'stage',
       cartProducts.map((cp: CartProduct) => cp.sku)
     );
     if (pricesResult.err) return pricesResult;
     const cartProductPrices = pricesResult.val;
+    end = process.hrtime.bigint();
+    this.server.log.info(
+      `${green('  Find Prices')} ${cartProductPrices.length} in ${magenta(Number(end - start) / 1000000)}ms`
+    );
 
     // Add Products to Cart
+    start = process.hrtime.bigint();
     for (let index = 0; index < data.items.length; index++) {
+      //data.items.length
       const cartProduct = cartProducts.find((cp: CartProduct) => cp.productId === data.items[index].productId)!;
       const prices = cartProductPrices
         .filter((p: Price) => p.sku === cartProduct.sku)
@@ -173,9 +208,10 @@ export class PriceService implements IPriceService {
       // Get Price
       const priceResult = await this.getMatchedPrice(cartProduct.sku, facts, prices);
       if (priceResult.err) return priceResult;
+
       // Add CartProduct
       cart.items.push({
-        productId: cartProduct.productId,
+        id: cartProduct.productId,
         sku: cartProduct.sku,
         name: cartProduct.name,
         categories: cartProduct.categories,
@@ -184,6 +220,31 @@ export class PriceService implements IPriceService {
       });
     }
     this.carts.set(cart.id, cart);
+
+    end = process.hrtime.bigint();
+    this.server.log.info(`${green('  Calculate Prices')} in ${magenta(Number(end - start) / 1000000)}ms`);
+
+    start = process.hrtime.bigint();
+    const promotionsResult: Result<any, AppError> = await fetch(this.promotionsUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(cart)
+    })
+      .then((response) => response.json())
+      .then((response) => new Ok(response))
+      .catch((error) => {
+        return new Err(new AppError(ErrorCode.BAD_REQUEST, error.message));
+      });
+    if (promotionsResult.err) return promotionsResult;
+    cart.promotions = promotionsResult.val;
+
+    end = process.hrtime.bigint();
+    this.server.log.info(
+      `${green('  Calculate Promotions')} ${promotionsResult.val.length} in ${magenta(Number(end - start) / 1000000)}ms`
+    );
+
     return new Ok(cart);
   }
 

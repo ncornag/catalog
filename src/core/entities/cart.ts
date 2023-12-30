@@ -11,20 +11,29 @@ const CartProductSchema = Type.Object({
 export type CartProduct = Static<typeof CartProductSchema>;
 
 const CartItemSchema = Type.Object({
-  productId: Type.String(),
+  id: Type.String(),
   sku: Type.String(),
   name: Type.String(),
   categories: Type.Array(Type.String()),
   quantity: Type.Number(),
-  value: ValueSchema
+  value: Type.Number()
 });
 export type CartItem = Static<typeof CartItemSchema>;
+
+const CartPromotionSchema = Type.Object({
+  promotionId: Type.String(),
+  type: Type.String(),
+  sku: Type.String(),
+  centAmount: ValueSchema
+});
+export type CartPromotion = Static<typeof CartPromotionSchema>;
 
 // ENTITY
 export const CartSchema = Type.Object(
   {
     id: Type.String(),
     items: Type.Array(CartItemSchema),
+    promotions: Type.Array(CartPromotionSchema),
     ...AuditFields
   },
   { additionalProperties: false }

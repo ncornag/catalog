@@ -19,7 +19,7 @@ export interface IProductService {
   createProduct: (catalogId: string, payload: CreateProductBody) => Promise<Result<Product, AppError>>;
   updateProduct: (catalogId: string, id: string, version: number, actions: any) => Promise<Result<Product, AppError>>;
   findProductById: (catalogId: string, id: string, materialized: boolean) => Promise<Result<Product, AppError>>;
-  cartProducById: (catalogId: string, ids: string[], lang: string) => Promise<Result<CartProduct[], AppError>>;
+  cartProducById: (catalogId: string, ids: string[], locale: string) => Promise<Result<CartProduct[], AppError>>;
 }
 
 const toEntity = ({ _id, ...remainder }: ProductDAO): Product => ({
@@ -187,7 +187,7 @@ export class ProductService implements IProductService {
   public async cartProducById(
     catalogId: string,
     ids: string[],
-    lang: string
+    locale: string
   ): Promise<Result<CartProduct[], AppError>> {
     const result = await this.repo.aggregate(catalogId, [
       {
@@ -219,7 +219,7 @@ export class ProductService implements IProductService {
     if (result.val.length === 0) return new Err(new AppError(ErrorCode.NOT_FOUND, 'Product not found'));
     result.val.forEach((entity) => {
       entity.inheritedFields = [];
-      this.inheritFields(entity, lang);
+      this.inheritFields(entity, locale);
       delete entity.base;
     });
     return new Ok(
@@ -234,14 +234,14 @@ export class ProductService implements IProductService {
     );
   }
 
-  private inheritFields(entity: any, lang?: string) {
+  private inheritFields(entity: any, locale?: string) {
     entity.inheritedFields = [];
     if (!entity.name) {
-      entity.name = lang ? entity.base[0].name[lang] : entity.base[0].name;
+      entity.name = locale ? entity.base[0].name[locale] : entity.base[0].name;
       entity.inheritedFields.push('name');
     }
     if (!entity.description) {
-      entity.description = lang ? entity.base[0].description[lang] : entity.base[0].description;
+      entity.description = locale ? entity.base[0].description[locale] : entity.base[0].description;
       entity.inheritedFields.push('description');
     }
     if (entity.base[0].searchKeywords) {
@@ -249,7 +249,7 @@ export class ProductService implements IProductService {
       Object.entries(entity.base[0].searchKeywords).forEach(([key, value]: [string, any]) => {
         entity.searchKeywords[key] = (entity.searchKeywords[key] ?? []).concat(...value);
       });
-      entity.searchKeywords = lang ? entity.searchKeywords[lang] : entity.searchKeywords;
+      entity.searchKeywords = locale ? entity.searchKeywords[locale] : entity.searchKeywords;
       entity.inheritedFields.push('searchKeywords');
     }
     if (entity.base[0].categories.length > 0) {
