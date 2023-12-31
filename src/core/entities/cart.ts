@@ -16,7 +16,7 @@ const CartItemSchema = Type.Object({
   name: Type.String(),
   categories: Type.Array(Type.String()),
   quantity: Type.Number(),
-  value: Type.Number()
+  value: ValueSchema
 });
 export type CartItem = Static<typeof CartItemSchema>;
 

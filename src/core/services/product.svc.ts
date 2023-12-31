@@ -13,6 +13,7 @@ import { ChangeNameActionHandler } from './actions/changeName.handler';
 import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler';
 import { Config } from '@infrastructure/http/plugins/config';
 import { ChangeKeywordsActionHandler } from './actions/changeKeywords.handler';
+import NodeCache from 'node-cache';
 
 // SERVICE INTERFACE
 export interface IProductService {
@@ -36,6 +37,8 @@ export class ProductService implements IProductService {
   private actionsRunner: UpdateEntityActionsRunner<ProductDAO, IProductRepository>;
   private config: Config;
   private messages;
+  private cartProductsCache;
+  private cacheCartProducts;
 
   private constructor(server: any) {
     this.repo = server.db.repo.productRepository as IProductRepository;
@@ -48,6 +51,8 @@ export class ProductService implements IProductService {
     this.actionsRunner = new UpdateEntityActionsRunner<ProductDAO, IProductRepository>();
     this.config = server.config;
     this.messages = server.messages;
+    this.cacheCartProducts = server.config.CACHE_CART_PRODUCTS;
+    this.cartProductsCache = new NodeCache({ useClones: false, stdTTL: 60 * 60, checkperiod: 60 });
   }
 
   public static getInstance(server: any): IProductService {
@@ -184,56 +189,6 @@ export class ProductService implements IProductService {
     }
   }
 
-  public async cartProducById(
-    catalogId: string,
-    ids: string[],
-    locale: string
-  ): Promise<Result<CartProduct[], AppError>> {
-    const result = await this.repo.aggregate(catalogId, [
-      {
-        $match: {
-          _id: { $in: ids }
-        }
-      },
-      {
-        $lookup: {
-          from: this.cols[catalogId].collectionName,
-          localField: 'parent',
-          foreignField: '_id',
-          as: 'base'
-        }
-      },
-      {
-        $project: {
-          parent: 1,
-          sku: 1,
-          attributes: 1,
-          'base.name': 1,
-          'base.description': 1,
-          'base.searchKeywords': 1,
-          'base.categories': 1
-        }
-      }
-    ]);
-    if (result.err) return result;
-    if (result.val.length === 0) return new Err(new AppError(ErrorCode.NOT_FOUND, 'Product not found'));
-    result.val.forEach((entity) => {
-      entity.inheritedFields = [];
-      this.inheritFields(entity, locale);
-      delete entity.base;
-    });
-    return new Ok(
-      result.val.map((entity) => {
-        return {
-          productId: entity._id,
-          sku: entity.sku,
-          name: entity.name,
-          categories: entity.categories
-        };
-      })
-    );
-  }
-
   private inheritFields(entity: any, locale?: string) {
     entity.inheritedFields = [];
     if (!entity.name) {
@@ -256,5 +211,63 @@ export class ProductService implements IProductService {
       entity.categories = (entity.categories ?? []).concat(...entity.base[0].categories);
       entity.inheritedFields.push('categories');
     }
+  }
+
+  // CART PRODUCTS BY ID
+  public async cartProducById(
+    catalogId: string,
+    ids: string[],
+    locale: string
+  ): Promise<Result<CartProduct[], AppError>> {
+    const cachedProducts = this.cartProductsCache.mget(ids);
+    ids = ids.filter((id) => !cachedProducts[id]);
+    if (ids.length !== 0) {
+      console.log('fetching from db');
+      const result = await this.repo.aggregate(catalogId, [
+        {
+          $match: {
+            _id: { $in: ids }
+          }
+        },
+        {
+          $lookup: {
+            from: this.cols[catalogId].collectionName,
+            localField: 'parent',
+            foreignField: '_id',
+            as: 'base'
+          }
+        },
+        {
+          $project: {
+            parent: 1,
+            sku: 1,
+            attributes: 1,
+            'base.name': 1,
+            'base.description': 1,
+            'base.searchKeywords': 1,
+            'base.categories': 1
+          }
+        }
+      ]);
+      if (result.err) return result;
+      if (result.val.length === 0) return new Err(new AppError(ErrorCode.NOT_FOUND, 'Product not found'));
+      result.val.forEach((entity) => {
+        entity.inheritedFields = [];
+        this.inheritFields(entity, locale);
+        delete entity.base;
+        cachedProducts[entity._id] = entity;
+        if (this.cacheCartProducts === true) this.cartProductsCache.set(entity._id, entity);
+      });
+    }
+    return new Ok(
+      Object.entries(cachedProducts).map(([key, value]: [string, any]) => {
+        return {
+          productId: value._id,
+          sku: value.sku,
+          name: value.name,
+          categories: value.categories
+        };
+      })
+    );
   }
 }

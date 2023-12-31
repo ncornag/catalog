@@ -9,7 +9,7 @@ import { IProductService, ProductService } from './product.svc';
 import { green, magenta, yellow, gray, reset } from 'kolorist';
 import { Expressions } from '@core/lib/expressions';
 import fetch from 'node-fetch';
-import { timeStamp } from 'console';
+import NodeCache from 'node-cache';
 
 // SERVICE INTERFACE
 export interface IPriceService {
@@ -63,6 +63,8 @@ export class PriceService implements IPriceService {
   private expressions: Expressions;
   private server;
   private promotionsUrl: string;
+  private cacheCartPrices;
+  private cartPricesCache;
 
   private constructor(server: any) {
     this.server = server;
@@ -70,6 +72,8 @@ export class PriceService implements IPriceService {
     this.productService = ProductService.getInstance(server);
     this.expressions = new Expressions(server);
     this.promotionsUrl = server.config.PROMOTIONS_URL;
+    this.cacheCartPrices = server.config.CACHE_CART_PRICES;
+    this.cartPricesCache = new NodeCache({ useClones: false, stdTTL: 60 * 60, checkperiod: 60 });
     this.warmupPricesExpressions(server);
   }
   private async warmupPricesExpressions(server: any) {
@@ -104,19 +108,32 @@ export class PriceService implements IPriceService {
     return new Ok(result.val.map((e: PriceDAO) => toEntity(e)));
   }
   public async getCartPricesForSKU(catalogId: string, skus: string[]): Promise<Result<Price[], AppError>> {
-    const result = await this.repo.find(
-      catalogId,
-      {
-        sku: { $in: skus },
-        active: true
-        //,$or: [{ 'predicates.constraints.country': 'IT' }, { 'predicates.constraints.country': { $exists: false } }]
-      },
-      {
-        projection: { order: 1, sku: 1, 'predicates.order': 1, 'predicates.value': 1, 'predicates.expression': 1 }
-      }
+    const cachedPrices = this.cartPricesCache.mget(skus);
+    skus = skus.filter((sku) => !cachedPrices[sku]);
+    if (skus.length !== 0) {
+      const result = await this.repo.find(
+        catalogId,
+        {
+          sku: { $in: skus },
+          active: true
+          //,$or: [{ 'predicates.constraints.country': 'IT' }, { 'predicates.constraints.country': { $exists: false } }]
+        },
+        {
+          projection: { order: 1, sku: 1, 'predicates.order': 1, 'predicates.value': 1, 'predicates.expression': 1 }
+        }
+      );
+      if (result.err) return result;
+      if (result.val.length === 0) return new Err(new AppError(ErrorCode.NOT_FOUND, 'Product not found'));
+      result.val.forEach((entity) => {
+        cachedPrices[entity.sku] = entity;
+        if (this.cacheCartPrices === true) this.cartPricesCache.set(entity.sku, entity);
+      });
+    }
+    return new Ok(
+      Object.entries(cachedPrices).map(([key, value]: [string, any]) => {
+        return toEntity(value);
+      })
     );
-    if (result.err) return result;
-    return new Ok(result.val.map((e: PriceDAO) => toEntity(e)));
   }
 
   // FIND PRICE BY ID
