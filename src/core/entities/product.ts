@@ -16,7 +16,9 @@ const i18nKeyType = Type.Record(Type.String({ pattern: '^[a-z]{2}([_])?([A-Za-z]
 });
 const i18nArrayKeyType = Type.Record(
   Type.String({ pattern: '^[a-z]{2}([_])?([A-Za-z]{2})?$' }),
-  Type.Array(Type.Object({ text: Type.String(), suggestTokenizer: Type.Object({ type: Type.String() }) })),
+  Type.Array(
+    Type.Object({ text: Type.String(), suggestTokenizer: Type.Optional(Type.Object({ type: Type.String() })) })
+  ),
   {
     additionalProperties: false,
     minProperties: 1
@@ -75,15 +77,15 @@ export const ProductSchema = Type.Object(
   {
     id: Type.String(),
     catalog: Type.String(),
-    name: i18nKeyType,
-    description: i18nKeyType,
+    name: Type.Optional(i18nKeyType),
+    description: Type.Optional(i18nKeyType),
     sku: Type.Optional(Type.String()), // Optional in the base product
     slug: Type.Optional(i18nKeyType), // Optional in the variants
-    searchKeywords: i18nArrayKeyType, // TODO: Refactor
+    searchKeywords: Type.Optional(i18nArrayKeyType), // TODO: Refactor
     categories: Type.Array(Type.String(), { default: [] }),
     attributes: Type.Any({ default: {} }),
     type: Type.Enum(ProductType), // BASE, VARIANT, COMPOSITE...
-    parent: Type.String({ default: '' }), // If this is a variant, the parent product id
+    parent: Type.Optional(Type.String()), // If this is a variant, the parent product id
     //status: Type.Optional(Type.String()), // TODO: implement workflow: Active, Inactive... Approved, Pending, Rejected
     taxCategory: Type.Optional(Type.String()), // TODO: implement taxes
     ...AuditFields

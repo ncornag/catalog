@@ -26,10 +26,9 @@ export class ProductRepository implements IProductRepository {
   // CREATE
   async create(catalogId: string, product: Product): Promise<Result<ProductDAO, AppError>> {
     const { id: _id, ...data } = product;
-    const productDAO = { _id, ...data };
+    const productDAO = { _id, ...data, catalog: catalogId };
     if (productDAO.parent) productDAO.type = ProductType.VARIANT;
     const catAwareCol = this.col[catalogId];
-    product.catalog = catalogId;
     const result = await catAwareCol.insertOne(productDAO);
     if (!result || result.insertedId == '') {
       // TODO: Check if this is the correct way to check for succesul inserts

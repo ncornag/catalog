@@ -1,12 +1,15 @@
 import 'dotenv/config';
-import { fakerEN, fakerDE, Randomizer } from '@faker-js/faker';
+import { Ok, Err, Result } from 'ts-results';
+import { AppError, ErrorCode } from '../src/core/lib/appError';
+import { fakerEN, fakerES, Randomizer } from '@faker-js/faker';
 import { Db, MongoClient } from 'mongodb';
 import { CT } from '../src/core/lib/ct';
 import { createPredicateExpression } from '../src/core/services/price.svc';
-import { nanoid } from 'nanoid';
+import fetch from 'node-fetch';
+import { Sema } from 'async-sema';
 
 fakerEN.seed(7);
-fakerDE.seed(7);
+fakerES.seed(7);
 
 function randomIntFromInterval(min: number, max: number) {
   // min and max included
@@ -30,7 +33,7 @@ class ProductCreator {
   private productCollectionName = 'Product';
   private pricesCollectionName = 'Prices';
   private col: any = {};
-  private logCount = 1000;
+  private logCount = 100;
   private projectId = 'TestProject';
   private Catalog = {
     STAGE: 'stage',
@@ -40,12 +43,12 @@ class ProductCreator {
   private countries = ['DE', 'ES', 'US', 'FR', 'IT', 'NL', 'PL', 'PT', 'RU', 'JP'];
   private channels = Array.from({ length: 20 }, (_, i) => `channel-${i}`);
   private customerGroups = Array.from({ length: 20 }, (_, i) => `cg-${i}`);
-  private constraintsValues = {
+  private predicateValues = {
     country: this.countries,
     channel: this.channels,
     customerGroup: this.customerGroups
   };
-  private constraintsOrder = [['country'], ['channel'], ['customerGroup']];
+  private predicatesOrder = [['country'], ['channel'], ['customerGroup']];
 
   constructor(server: any, stageSufix: string, currentSufix: string) {
     this.server = server;
@@ -62,12 +65,8 @@ class ProductCreator {
     };
   }
 
-  private async writeAndLog(params: any) {
-    if (params.productsCount % this.logCount === 0 || params.force === true) {
-      await this.col.products.staged.insertMany(params.stagedProducts);
-      await this.col.prices.staged.insertMany(params.stagedPrices);
-      params.stagedProducts.splice(0, params.stagedProducts.length);
-      params.stagedPrices.splice(0, params.stagedPrices.length);
+  private async writeAndLogAPI(params: any): Promise<Result<any, AppError>> {
+    if ((params.base && params.productsCount % this.logCount === 0) || params.force === true) {
       let end = new Date().getTime();
       console.log(
         `Inserted ${params.productsCount} products at ${(
@@ -76,39 +75,69 @@ class ProductCreator {
         ).toFixed()} items/s`
       );
     }
+    let result: Result<any, AppError>;
+    if (params.base || params.variant) {
+      result = await fetch('http://localhost:3000/products?catalog=stage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(params.base || params.variant)
+      })
+        .then((response) => response.json())
+        .then((response) => new Ok(response))
+        .catch((error) => {
+          return new Err(new AppError(ErrorCode.BAD_REQUEST, error.message));
+        });
+    } else if (params.price) {
+      result = await fetch('http://localhost:3000/prices?catalog=stage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(params.price)
+      })
+        .then((response) => response.json())
+        .then((response) => new Ok(response))
+        .catch((error) => {
+          return new Err(new AppError(ErrorCode.BAD_REQUEST, error.message));
+        });
+    } else {
+      return new Ok({});
+    }
+    if (result.err) {
+      console.log(result);
+      process.exit(0);
+    }
+    return result;
   }
 
   public searchKeywords(min: number, max: number): any {
-    const keywordsEN: string[] = [];
-    const keywordsDE: string[] = [];
+    const keywordsEN: any[] = [];
+    const keywordsES: any[] = [];
     const m = randomIntFromInterval(min, max);
     for (let i = 0; i < m; i++) {
-      keywordsEN.push(fakerEN.commerce.productAdjective());
-      keywordsDE.push(fakerDE.commerce.productAdjective());
+      keywordsEN.push({ text: fakerEN.commerce.productAdjective() });
+      keywordsES.push({ text: fakerES.commerce.productAdjective() });
     }
-    return { en: keywordsEN, de: keywordsDE };
+    return { en: keywordsEN, es: keywordsES };
   }
 
   public createProduct(projectId: string, catalog: string): any {
     return {
-      _id: nanoid(),
-      version: 0,
-      projectId,
-      catalog,
       type: 'base',
-      createdAt: new Date().toISOString(),
-      name: { en: fakerEN.commerce.productName(), de: fakerDE.commerce.productName() },
+      name: { en: fakerEN.commerce.productName(), es: fakerES.commerce.productName() },
       description: {
         en: fakerEN.lorem.paragraphs({ min: 1, max: 3 }),
-        de: fakerDE.lorem.paragraphs({ min: 1, max: 3 })
+        es: fakerES.lorem.paragraphs({ min: 1, max: 3 })
       },
       searchKeywords: this.searchKeywords(1, 3),
       slug: {
         en: fakerEN.lorem.slug(),
-        de: fakerDE.lorem.slug()
+        es: fakerES.lorem.slug()
       },
-      categories: [this.categories[randomIntFromInterval(0, this.categories.length - 1)]],
-      priceMode: this.ct.PriceMode.EMBEDDED
+      categories: [this.categories[randomIntFromInterval(0, this.categories.length - 1)]]
+      //priceMoes: this.ct.PriceMode.EMBEDDED
     };
   }
 
@@ -116,17 +145,12 @@ class ProductCreator {
     let sku = fakerEN.commerce.isbn(13);
     let order = 1;
     let prices = Array.from({ length: pricesPerVariant }, (_, i) =>
-      this.createPrice(projectId, catalog, sku, order++, this.constraintsOrder)
+      this.createPrice(projectId, catalog, sku, order++, this.predicatesOrder)
     );
     prices.push(this.createPrice(projectId, catalog, sku, order++, [[]]));
     return [
       {
-        _id: nanoid(),
-        version: 0,
-        projectId,
-        catalog,
         type: 'variant',
-        createdAt: new Date().toISOString(),
         parent: parent,
         sku,
         attributes: {
@@ -138,35 +162,30 @@ class ProductCreator {
     ];
   }
 
-  public createPrice(projectId: string, catalog: string, sku: string, order: number, constraintsOrder: any): any {
+  public createPrice(projectId: string, catalog: string, sku: string, order: number, predicatesOrder: any): any {
     const centAmount = randomIntFromInterval(1000, 10000);
     let constraintsAcc = {};
     return {
-      _id: nanoid(),
-      version: 0,
-      projectId,
-      catalog,
-      createdAt: new Date().toISOString(),
       order,
       sku,
       active: true,
-      predicates: Array.from({ length: constraintsOrder.length }, (_, i) => {
-        let constraints = constraintsOrder[i].reduce((acc: any, curr: any) => {
-          acc[curr] = [this.constraintsValues[curr][randomIntFromInterval(0, this.constraintsValues[curr].length - 1)]];
+      predicates: Array.from({ length: predicatesOrder.length }, (_, i) => {
+        let predicates = predicatesOrder[i].reduce((acc: any, curr: any) => {
+          acc[curr] = [this.predicateValues[curr][randomIntFromInterval(0, this.predicateValues[curr].length - 1)]];
           constraintsAcc[curr] = acc[curr];
           return acc;
         }, Object.assign({}, constraintsAcc));
-        let expression = createPredicateExpression(constraints);
+        let expression = createPredicateExpression(predicates);
         return Object.assign(
           {
-            order: constraintsOrder.length - i,
+            order: predicatesOrder.length - i,
             value: {
               type: 'centPrecision',
               currencyCode: 'EUR',
               centAmount: centAmount - i * 10,
               fractionDigits: 2
             },
-            constraints
+            constraints: predicates
           },
           expression && { expression }
         );
@@ -178,8 +197,7 @@ class ProductCreator {
     let productsCount = 0;
     let variantsCount = 0;
     let pricesCount = 0;
-    let stagedProducts: any[] = [];
-    let stagedPrices: any[] = [];
+    const s = new Sema(5, { capacity: productsToInsert });
 
     try {
       await this.col.products.staged.drop();
@@ -190,22 +208,34 @@ class ProductCreator {
     console.log('Staged collections dropped successfully');
 
     let start = new Date().getTime();
-    for (let i = 0; i < productsToInsert; i++) {
-      const base = this.createProduct(this.projectId, this.Catalog.STAGE);
-      stagedProducts.push(base);
-      productsCount++;
-      for (let j = 0; j < variantsPerProduct; j++) {
-        const [variant, prices] = this.createVariant(this.projectId, base.catalog, base._id, pricesPerVariant);
-        stagedProducts.push(variant);
-        pricesCount += prices.length;
-        variantsCount++;
-        stagedPrices.push(...prices);
-      }
-      await this.writeAndLog({ productsCount, start, stagedProducts, stagedPrices });
-    }
-    if (stagedProducts.length > 0) {
-      await this.writeAndLog({ productsCount, start, stagedProducts, stagedPrices, force: true });
-    }
+    const arr: any[] = [];
+    for (let i = 0; i < productsToInsert; i++) arr.push(i + 1);
+    await Promise.all(
+      arr.map(async (elem) => {
+        await s.acquire();
+        const base = this.createProduct(this.projectId, this.Catalog.STAGE);
+        productsCount++;
+        const baseResult = await this.writeAndLogAPI({ productsCount, start, base });
+        for (let j = 0; j < variantsPerProduct; j++) {
+          const [variant, prices] = this.createVariant(
+            this.projectId,
+            baseResult.val.catalog,
+            baseResult.val.id,
+            pricesPerVariant
+          );
+          variantsCount++;
+          const variantsResult = await this.writeAndLogAPI({ productsCount, start, variant });
+          for (let k = 0; k < prices.length - 1; k++) {
+            prices[k].sku = variantsResult.val.sku;
+            const priceResult = await this.writeAndLogAPI({ productsCount, start, price: prices[k] });
+            pricesCount++;
+          }
+        }
+        s.release();
+      })
+    ).catch((e) => console.log(e));
+
+    await this.writeAndLogAPI({ productsCount, start, force: true });
     console.log(`Database seeded with ${productsCount} products + ${variantsCount} variants and ${pricesCount} prices`);
   }
 }

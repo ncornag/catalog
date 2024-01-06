@@ -5,9 +5,10 @@ const msgIn = bold(yellow('←')) + yellow('MSG:');
 let service: IAuditLogService;
 
 const handler = async (data: any, server: any) => {
-  server.log.debug(
-    `${magenta('#' + data.metadata.requestId || '')} ${msgIn} auditLog indexing ${green(data.source.id)}`
-  );
+  if (server.log.isLevelEnabled('debug'))
+    server.log.debug(
+      `${magenta('#' + data.metadata.requestId || '')} ${msgIn} auditLog indexing ${green(data.source.id)}`
+    );
   service.createAuditLog({
     entity: data.metadata.entity,
     entityId: data.source.id,

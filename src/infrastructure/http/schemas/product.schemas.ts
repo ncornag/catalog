@@ -7,7 +7,7 @@ const defaultExample = {
   key: 'root'
 };
 
-const ProductResponse = Type.Composite([ProductSchema], {
+const ProductResponse = Type.Omit(ProductSchema, ['catalog'], {
   examples: [
     {
       id: '63cd0e4be59031edffa39f5c',
@@ -19,10 +19,14 @@ const ProductResponse = Type.Composite([ProductSchema], {
 });
 
 // CREATE
-export const CreateProductBodySchema = Type.Omit(ProductSchema, ['id', 'createdAt', 'lastModifiedAt', 'version'], {
-  examples: [defaultExample],
-  additionalProperties: false
-});
+export const CreateProductBodySchema = Type.Omit(
+  ProductSchema,
+  ['id', 'catalog', 'createdAt', 'lastModifiedAt', 'version'],
+  {
+    examples: [defaultExample],
+    additionalProperties: false
+  }
+);
 export type CreateProductBody = Static<typeof CreateProductBodySchema>;
 
 // UPDATE

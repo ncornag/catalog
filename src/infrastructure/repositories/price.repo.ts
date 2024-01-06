@@ -23,6 +23,19 @@ export class PriceRepository implements IPriceRepository {
     this.col = server.db.col.price;
   }
 
+  // CREATE
+  async create(catalogId: string, price: Price): Promise<Result<PriceDAO, AppError>> {
+    const { id: _id, ...data } = price;
+    const priceDAO = { _id, ...data, catalog: catalogId };
+    const catAwareCol = this.col[catalogId];
+    const result = await catAwareCol.insertOne(priceDAO);
+    if (!result || result.insertedId == '') {
+      // TODO: Check if this is the correct way to check for succesul inserts
+      return new Err(new AppError(ErrorCode.BAD_REQUEST, `Can't save price [${_id}]`));
+    }
+    return new Ok(priceDAO);
+  }
+
   // FIND ONE
   async findOne(catalogId: string, id: string, version?: number): Promise<Result<PriceDAO, AppError>> {
     const filter: any = { _id: id };

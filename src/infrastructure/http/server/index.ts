@@ -108,13 +108,13 @@ export const createServer = async (): Promise<FastifyInstance> => {
   // Load Routes
   await server.register(classificationCategoryRoutes, { prefix: '/classificationCategories' });
   await server.register(productCategoryRoutes, { prefix: '/productCategories' });
-  await server.register(productRoutes, { prefix: '/product' });
+  await server.register(productRoutes, { prefix: '/products' });
   await server.register(productRoutesV1, { prefix: '/v1/products' });
-  await server.register(catalogRoutes, { prefix: '/catalog' });
+  await server.register(catalogRoutes, { prefix: '/catalogs' });
   await server.register(catalogSyncRoutes, { prefix: '/catalogSync' });
-  await server.register(priceRoutes, { prefix: '/price' });
-  await server.register(cartRoutes, { prefix: '/cart' });
-  await server.register(auditLogRoutes, { prefix: '/auditLog' });
+  await server.register(priceRoutes, { prefix: '/prices' });
+  await server.register(cartRoutes, { prefix: '/carts' });
+  await server.register(auditLogRoutes, { prefix: '/auditLogs' });
 
   // Load Listeners
   auditLogListener(server);

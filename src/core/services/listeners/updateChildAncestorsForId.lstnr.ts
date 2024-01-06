@@ -11,9 +11,12 @@ const msgIn = bold(yellow('←')) + yellow('MSG:');
 
 const handler = async (data: any, server: any) => {
   const repo = server.db.repo.classificationCategoryRepository;
-  server.log.debug(
-    `${magenta('#' + data.metadata.requestId || '')} ${msgIn} updateChildAncestorsForId ${green(JSON.stringify(data))}`
-  );
+  if (server.log.isLevelEnabled('debug'))
+    server.log.debug(
+      `${magenta('#' + data.metadata.requestId || '')} ${msgIn} updateChildAncestorsForId ${green(
+        JSON.stringify(data)
+      )}`
+    );
   //
   const entityResult = await repo.find(
     { projectId: data.metadata.projectId, _id: data.id },

@@ -6,7 +6,8 @@ const msgIn = bold(yellow('←')) + yellow('MSG:');
 const handler = async (data: any, server: any) => {
   if (data.metadata.catalogId !== 'online') return;
   if (data.metadata.entity !== 'product') return;
-  server.log.debug(`${magenta('#' + data.metadata.requestId || '')} ${msgIn} indexing ${green(data.source.id)}`);
+  if (server.log.isLevelEnabled('debug'))
+    server.log.debug(`${magenta('#' + data.metadata.requestId || '')} ${msgIn} indexing ${green(data.source.id)}`);
   if (data.metadata.type === 'entityUpdate') {
     const updates = Value.Patch({}, data.difference);
     updates.id = data.source.id;

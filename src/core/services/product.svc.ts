@@ -71,14 +71,15 @@ export class ProductService implements IProductService {
     } as Product);
     if (result.err) return result;
     // Send new entity via messagging
-    this.messages.publish(this.config.EXCHANGE, this.config.ENTITY_UPDATE_ROUTE, {
-      source: toEntity(result.val),
-      metadata: {
-        catalogId,
-        type: 'entityInsert',
-        entity: 'product'
-      }
-    });
+    if (this.messages)
+      this.messages.publish(this.config.EXCHANGE, this.config.ENTITY_UPDATE_ROUTE, {
+        source: toEntity(result.val),
+        metadata: {
+          catalogId,
+          type: 'entityInsert',
+          entity: 'product'
+        }
+      });
     // Return new entity
     return new Ok(toEntity(result.val));
   }
@@ -222,7 +223,6 @@ export class ProductService implements IProductService {
     const cachedProducts = this.cartProductsCache.mget(ids);
     ids = ids.filter((id) => !cachedProducts[id]);
     if (ids.length !== 0) {
-      console.log('fetching from db');
       const result = await this.repo.aggregate(catalogId, [
         {
           $match: {

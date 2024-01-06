@@ -10,9 +10,12 @@ import { green, magenta, yellow, gray, reset } from 'kolorist';
 import { Expressions } from '@core/lib/expressions';
 import fetch from 'node-fetch';
 import NodeCache from 'node-cache';
+import { Config } from '@infrastructure/http/plugins/config';
+import { CreatePriceBody } from '@infrastructure/http/schemas/price.schemas';
 
 // SERVICE INTERFACE
 export interface IPriceService {
+  createPrice: (catalogId: string, payload: CreatePriceBody) => Promise<Result<Price, AppError>>;
   getPricesForSKU: (catalogId: string, skus: [string]) => Promise<Result<Price[], AppError>>;
   findPriceById: (catalogId: string, id: string) => Promise<Result<Price, AppError>>;
   createCart: (data: any) => Promise<Result<any, AppError>>;
@@ -62,6 +65,8 @@ export class PriceService implements IPriceService {
   private productService: IProductService;
   private expressions: Expressions;
   private server;
+  private config: Config;
+  private messages;
   private promotionsUrl: string;
   private cacheCartPrices;
   private cartPricesCache;
@@ -70,12 +75,23 @@ export class PriceService implements IPriceService {
     this.server = server;
     this.repo = server.db.repo.priceRepository as IPriceRepository;
     this.productService = ProductService.getInstance(server);
+    this.config = server.config;
+    this.messages = server.messages;
     this.expressions = new Expressions(server);
     this.promotionsUrl = server.config.PROMOTIONS_URL;
     this.cacheCartPrices = server.config.CACHE_CART_PRICES;
     this.cartPricesCache = new NodeCache({ useClones: false, stdTTL: 60 * 60, checkperiod: 60 });
     this.warmupPricesExpressions(server);
   }
+
+  public static getInstance(server: any): IPriceService {
+    if (!PriceService.instance) {
+      PriceService.instance = new PriceService(server);
+    }
+    return PriceService.instance;
+  }
+
+  // PRICES WARMUP
   private async warmupPricesExpressions(server: any) {
     // Get all price expressions and compile them
     const start = process.hrtime.bigint();
@@ -95,45 +111,32 @@ export class PriceService implements IPriceService {
     );
   }
 
-  public static getInstance(server: any): IPriceService {
-    if (!PriceService.instance) {
-      PriceService.instance = new PriceService(server);
-    }
-    return PriceService.instance;
+  // CREATE PRICE
+  public async createPrice(catalogId: string, payload: CreatePriceBody): Promise<Result<Price, AppError>> {
+    // Save the entity
+    const result = await this.repo.create(catalogId, {
+      id: nanoid(),
+      ...payload
+    } as Price);
+    if (result.err) return result;
+    // Send new entity via messagging
+    if (this.messages)
+      this.messages.publish(this.config.EXCHANGE, this.config.ENTITY_UPDATE_ROUTE, {
+        source: toEntity(result.val),
+        metadata: {
+          catalogId,
+          type: 'entityInsert',
+          entity: 'price'
+        }
+      });
+    // Return new entity
+    return new Ok(toEntity(result.val));
   }
 
   public async getPricesForSKU(catalogId: string, skus: string[]): Promise<Result<Price[], AppError>> {
     const result = await this.repo.find(catalogId, { sku: { $in: skus } });
     if (result.err) return result;
     return new Ok(result.val.map((e: PriceDAO) => toEntity(e)));
-  }
-  public async getCartPricesForSKU(catalogId: string, skus: string[]): Promise<Result<Price[], AppError>> {
-    const cachedPrices = this.cartPricesCache.mget(skus);
-    skus = skus.filter((sku) => !cachedPrices[sku]);
-    if (skus.length !== 0) {
-      const result = await this.repo.find(
-        catalogId,
-        {
-          sku: { $in: skus },
-          active: true
-          //,$or: [{ 'predicates.constraints.country': 'IT' }, { 'predicates.constraints.country': { $exists: false } }]
-        },
-        {
-          projection: { order: 1, sku: 1, 'predicates.order': 1, 'predicates.value': 1, 'predicates.expression': 1 }
-        }
-      );
-      if (result.err) return result;
-      if (result.val.length === 0) return new Err(new AppError(ErrorCode.NOT_FOUND, 'Product not found'));
-      result.val.forEach((entity) => {
-        cachedPrices[entity.sku] = entity;
-        if (this.cacheCartPrices === true) this.cartPricesCache.set(entity.sku, entity);
-      });
-    }
-    return new Ok(
-      Object.entries(cachedPrices).map(([key, value]: [string, any]) => {
-        return toEntity(value);
-      })
-    );
   }
 
   // FIND PRICE BY ID
@@ -282,5 +285,37 @@ export class PriceService implements IPriceService {
     }
     if (matchedPrice === undefined) return new Err(new AppError(ErrorCode.NOT_FOUND, `Price not found for ${sku}`));
     return new Ok(prices[matchedPrice].value);
+  }
+
+  public async getCartPricesForSKU(catalogId: string, skus: string[]): Promise<Result<Price[], AppError>> {
+    const cachedPrices = this.cartPricesCache.mget(skus);
+    skus = skus.filter((sku) => !cachedPrices[sku]);
+    if (skus.length !== 0) {
+      const result = await this.repo.find(
+        catalogId,
+        {
+          sku: { $in: skus },
+          active: true
+          //,$or: [{ 'predicates.constraints.country': 'IT' }, { 'predicates.constraints.country': { $exists: false } }]
+        },
+        {
+          projection: { order: 1, sku: 1, 'predicates.order': 1, 'predicates.value': 1, 'predicates.expression': 1 }
+        }
+      );
+      if (result.err) return result;
+      if (result.val.length === 0) return new Err(new AppError(ErrorCode.NOT_FOUND, 'Product not found'));
+      result.val.forEach((price) => {
+        if (!cachedPrices[price.sku]) cachedPrices[price.sku] = [];
+        (cachedPrices[price.sku] as [any]).push(price);
+        if (this.cacheCartPrices === true) this.cartPricesCache.set(price.sku, cachedPrices[price.sku]);
+      });
+    }
+    return new Ok(
+      Object.entries(cachedPrices)
+        .map(([key, value]: [string, any]) => {
+          return value.map((p: any) => toEntity(p));
+        })
+        .flat()
+    );
   }
 }
