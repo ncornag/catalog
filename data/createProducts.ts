@@ -136,7 +136,7 @@ class ProductCreator {
         en: fakerEN.lorem.slug(),
         es: fakerES.lorem.slug()
       },
-      categories: [this.categories[randomIntFromInterval(0, this.categories.length - 1)]]
+      categories: [this.categories[randomIntFromInterval(1, this.categories.length - 1)]]
       //priceMoes: this.ct.PriceMode.EMBEDDED
     };
   }

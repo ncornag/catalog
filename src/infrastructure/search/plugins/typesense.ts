@@ -36,7 +36,9 @@ export default fp(async function (server: FastifyInstance) {
       { name: 'name', type: 'object', optional: true },
       { name: 'description', type: 'object', optional: true },
       { name: 'searchKeywords', type: 'object', optional: true, facet: true },
-      { name: 'attributes', type: 'object', optional: true, facet: true }
+      { name: 'attributes', type: 'object', optional: true, facet: true },
+      { name: 'categories', type: 'string[]', optional: true, facet: true },
+      { name: 'prices', type: 'object', optional: true, facet: true }
     ],
     enable_nested_fields: true
   };

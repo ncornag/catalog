@@ -18,7 +18,8 @@ import { requestContextProvider, getRequestIdFastifyAppConfig } from '@infrastru
 import { AppError, ErrorCode } from '@core/lib/appError';
 import { errorName } from '@infrastructure/database/mongoErrors';
 import { auditLogListener } from '@core/services/listeners/auditLog.lstnr';
-import { searchListener } from '@core/services/listeners/indexing.lstnr';
+import { productsIndexerListener } from '@core/services/listeners/productsIndexer.lstnr';
+import { pricesIndexerListener } from '@core/services/listeners/pricesIndexer.lstnr';
 import { updateChildAncestorsForIdListener } from '@core/services/listeners/updateChildAncestorsForId.lstnr';
 import classificationCategoryRoutes from '@infrastructure/http/routes/classificationCategory.routes';
 import productCategoryRoutes from '@infrastructure/http/routes/productCategory.routes';
@@ -118,7 +119,8 @@ export const createServer = async (): Promise<FastifyInstance> => {
 
   // Load Listeners
   auditLogListener(server);
-  searchListener(server);
+  productsIndexerListener(server);
+  pricesIndexerListener(server);
   updateChildAncestorsForIdListener(server);
 
   await server.ready();

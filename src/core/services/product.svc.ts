@@ -20,6 +20,7 @@ export interface IProductService {
   createProduct: (catalogId: string, payload: CreateProductBody) => Promise<Result<Product, AppError>>;
   updateProduct: (catalogId: string, id: string, version: number, actions: any) => Promise<Result<Product, AppError>>;
   findProductById: (catalogId: string, id: string, materialized: boolean) => Promise<Result<Product, AppError>>;
+  findProducts: (catalogId: string, query: any, options: any) => Promise<Result<Product[], AppError>>;
   cartProducById: (catalogId: string, ids: string[], locale: string) => Promise<Result<CartProduct[], AppError>>;
 }
 
@@ -188,6 +189,12 @@ export class ProductService implements IProductService {
       }
       return new Ok(toEntity(entity));
     }
+  }
+
+  public async findProducts(catalogId: string, query: any, options: any): Promise<Result<Product[], AppError>> {
+    const result = await this.repo.find(catalogId, query, options);
+    if (result.err) return result;
+    return new Ok(result.val.map((entity) => toEntity(entity)));
   }
 
   private inheritFields(entity: any, locale?: string) {
