@@ -33,6 +33,7 @@ const ConfigSchema = Type.Strict(
     TYPESENSE_HOST: Type.Optional(Type.String()),
     TYPESENSE_PORT: Type.Optional(Type.String()),
     TYPESENSE_API_KEY: Type.Optional(Type.String()),
+    CATALOGS_TO_INDEX: Type.Optional(Type.String()),
     CT_SCOPE: Type.Optional(Type.String()),
     CT_AUTHHOST: Type.Optional(Type.String()),
     CT_HTTPHOST: Type.Optional(Type.String()),

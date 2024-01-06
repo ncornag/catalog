@@ -3,8 +3,9 @@ import { green, red, magenta, yellow, bold } from 'kolorist';
 
 const msgIn = bold(yellow('←')) + yellow('MSG:');
 
-const handler = async (data: any, server: any) => {
-  if (data.metadata.catalogId !== 'online') return;
+const handler = async (data: any, server: any, catalogs: string[]) => {
+  if (!catalogs.includes(data.metadata.catalogId)) return;
+  //if (data.metadata.catalogId !== 'online') return;
   if (data.metadata.entity !== 'product') return;
   if (server.log.isLevelEnabled('debug'))
     server.log.debug(`${magenta('#' + data.metadata.requestId || '')} ${msgIn} indexing ${green(data.source.id)}`);
@@ -19,14 +20,16 @@ const handler = async (data: any, server: any) => {
 
 export class SearchListener {
   private server: any;
+  private catalogs: string[];
   constructor(server: any) {
     this.server = server;
+    this.catalogs = server.config.CATALOGS_TO_INDEX.split(',');
   }
   start() {
     this.server.log.info(
       `${magenta('#')}  ${yellow('IndexingService')} ${green('starting in')} ${
         this.server.config.ENTITY_UPDATE_ROUTE
-      }/${this.server.config.SEARCH_QUEUE}`
+      }/${this.server.config.SEARCH_QUEUE} for ${this.catalogs} catalogs`
     );
     this.server.messages.subscribe(
       {
@@ -46,7 +49,7 @@ export class SearchListener {
         }
       },
       (data: any) => {
-        handler(data, this.server);
+        handler(data, this.server, this.catalogs);
       }
     );
   }

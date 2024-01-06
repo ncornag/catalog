@@ -1,6 +1,7 @@
 import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
 import { Client } from 'typesense';
+import { CollectionCreateSchema } from 'typesense/lib/Typesense/Collections';
 
 declare module 'fastify' {
   export interface FastifyInstance {
@@ -28,24 +29,31 @@ export default fp(async function (server: FastifyInstance) {
   });
 
   // PRODUCT SCHEMA
-  let productsSchema = {
+  let productsSchema: CollectionCreateSchema = {
     name: 'products',
     fields: [
-      { name: 'name', type: 'object' },
-      { name: 'description', type: 'string', optional: true },
-      { name: 'searchKeywords', type: 'string[]', facet: true },
-      { name: 'attributes', type: 'object' }
+      { name: 'catalog', type: 'string' },
+      { name: 'name', type: 'object', optional: true },
+      { name: 'description', type: 'object', optional: true },
+      { name: 'searchKeywords', type: 'object', optional: true, facet: true },
+      { name: 'attributes', type: 'object', optional: true, facet: true }
     ],
     enable_nested_fields: true
   };
 
-  await client.collections('products').delete();
+  if (process.env.DROP_PRODUCT_INDEX === 'YES')
+    await client
+      .collections('products')
+      .delete()
+      .catch(function (error) {});
+
   await client
     .collections('products')
     .retrieve()
     .then(function (data) {})
     .catch(function (error) {
-      client.collections().create(productsSchema);
+      server.log.info('Creating search collection [products]', error);
+      return client.collections().create(productsSchema);
     });
 
   server.log.info(`Connected to Typesense at [${ts_host}:${ts_port}]`);
