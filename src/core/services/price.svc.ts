@@ -106,9 +106,7 @@ export class PriceService implements IPriceService {
       this.expressions.getExpression(e.expression);
     });
     const end = process.hrtime.bigint();
-    server.log.info(
-      `${green('Warmup Price Expressions')} ${expressions.length} in ${magenta(Number(end - start) / 1000000)}ms`
-    );
+    server.log.info(`Warmup ${expressions.length} price expressions in ${magenta(Number(end - start) / 1000000)}ms`);
   }
 
   // CREATE PRICE
@@ -120,15 +118,14 @@ export class PriceService implements IPriceService {
     } as Price);
     if (result.err) return result;
     // Send new entity via messagging
-    if (this.messages)
-      this.messages.publish(this.config.EXCHANGE, this.config.ENTITY_UPDATE_ROUTE, {
-        source: toEntity(result.val),
-        metadata: {
-          catalogId,
-          type: 'entityInsert',
-          entity: 'price'
-        }
-      });
+    this.messages.publish(`${catalogId}.price.insert`, {
+      source: toEntity(result.val),
+      metadata: {
+        catalogId,
+        type: 'entityInsert',
+        entity: 'price'
+      }
+    });
     // Return new entity
     return new Ok(toEntity(result.val));
   }

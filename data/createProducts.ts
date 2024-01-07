@@ -39,10 +39,11 @@ class ProductCreator {
     STAGE: 'stage',
     ONLINE: 'online'
   };
-  private categories = Array.from({ length: 100 }, (_, i) => `category-${i}`);
+  private categories = Array.from({ length: 100 }, (_, i) => fakerEN.commerce.department());
   private countries = ['DE', 'ES', 'US', 'FR', 'IT', 'NL', 'PL', 'PT', 'RU', 'JP'];
   private channels = Array.from({ length: 20 }, (_, i) => `channel-${i}`);
   private customerGroups = Array.from({ length: 20 }, (_, i) => `cg-${i}`);
+  private brands = Array.from({ length: 1000 }, (_, i) => fakerEN.company.name());
   private predicateValues = {
     country: this.countries,
     channel: this.channels,
@@ -74,10 +75,11 @@ class ProductCreator {
           (end - params.start)
         ).toFixed()} items/s`
       );
+      params.start = new Date().getTime();
     }
     let result: Result<any, AppError>;
     if (params.base || params.variant) {
-      result = await fetch('http://localhost:3000/products?catalog=stage', {
+      result = await fetch('http://127.0.0.1:3000/products?catalog=stage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -90,7 +92,7 @@ class ProductCreator {
           return new Err(new AppError(ErrorCode.BAD_REQUEST, error.message));
         });
     } else if (params.price) {
-      result = await fetch('http://localhost:3000/prices?catalog=stage', {
+      result = await fetch('http://127.0.0.1:3000/prices?catalog=stage', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -141,21 +143,35 @@ class ProductCreator {
     };
   }
 
-  public createVariant(projectId: string, catalog: string, parent: string, pricesPerVariant: number): any {
+  public createVariant(projectId: string, parent: any, pricesPerVariant: number): any {
     let sku = fakerEN.commerce.isbn(13);
     let order = 1;
     let prices = Array.from({ length: pricesPerVariant }, (_, i) =>
-      this.createPrice(projectId, catalog, sku, order++, this.predicatesOrder)
+      this.createPrice(projectId, parent.catalog, sku, order++, this.predicatesOrder)
     );
-    prices.push(this.createPrice(projectId, catalog, sku, order++, [[]]));
+    prices.push(this.createPrice(projectId, parent.catalog, sku, order++, [[]]));
     return [
       {
         type: 'variant',
-        parent: parent,
+        parent: parent.id,
+        name: {
+          en: `${parent.name.en} - ${fakerEN.commerce.productName()}`,
+          es: `${parent.name.es} - ${fakerES.commerce.productName()}`
+        },
         sku,
         attributes: {
           color: fakerEN.color.human(),
-          size: fakerEN.string.numeric({ length: 1 })
+          size: fakerEN.string.numeric({ length: 1 }),
+          brand:
+            this.brands[
+              randomIntFromInterval(
+                0,
+                productsToInsert / 5 > this.brands.length ? this.brands.length - 1 : productsToInsert / 5
+              )
+            ],
+          popularity: randomIntFromInterval(1000, 5000),
+          free_shipping: Math.random() < 0.1,
+          rating: randomIntFromInterval(1, 5)
         }
       },
       prices
@@ -197,7 +213,7 @@ class ProductCreator {
     let productsCount = 0;
     let variantsCount = 0;
     let pricesCount = 0;
-    const s = new Sema(5, { capacity: productsToInsert });
+    const s = new Sema(1, { capacity: productsToInsert });
 
     try {
       await this.col.products.staged.drop();
@@ -217,12 +233,7 @@ class ProductCreator {
         productsCount++;
         const baseResult = await this.writeAndLogAPI({ productsCount, start, base });
         for (let j = 0; j < variantsPerProduct; j++) {
-          const [variant, prices] = this.createVariant(
-            this.projectId,
-            baseResult.val.catalog,
-            baseResult.val.id,
-            pricesPerVariant
-          );
+          const [variant, prices] = this.createVariant(this.projectId, baseResult.val, pricesPerVariant);
           variantsCount++;
           const variantsResult = await this.writeAndLogAPI({ productsCount, start, variant });
           for (let k = 0; k < prices.length - 1; k++) {

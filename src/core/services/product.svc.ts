@@ -72,15 +72,14 @@ export class ProductService implements IProductService {
     } as Product);
     if (result.err) return result;
     // Send new entity via messagging
-    if (this.messages)
-      this.messages.publish(this.config.EXCHANGE, this.config.ENTITY_UPDATE_ROUTE, {
-        source: toEntity(result.val),
-        metadata: {
-          catalogId,
-          type: 'entityInsert',
-          entity: 'product'
-        }
-      });
+    this.messages.publish(`${catalogId}.product.insert`, {
+      source: toEntity(result.val),
+      metadata: {
+        catalogId,
+        type: 'entityInsert',
+        entity: 'product'
+      }
+    });
     // Return new entity
     return new Ok(toEntity(result.val));
   }
@@ -114,7 +113,7 @@ export class ProductService implements IProductService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.messages.publish(this.config.EXCHANGE, this.config.ENTITY_UPDATE_ROUTE, {
+      this.messages.publish(`${catalogId}.product.update`, {
         source: toEntity(result.val),
         difference: edits,
         metadata: {
@@ -125,7 +124,7 @@ export class ProductService implements IProductService {
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.messages.publish(this.config.EXCHANGE, sideEffect.action, {
+        this.messages.publish(`${catalogId}.products.update.sideEffect`, {
           ...sideEffect.data,
           metadata: { type: sideEffect.action }
         });

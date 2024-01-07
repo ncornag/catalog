@@ -8,7 +8,7 @@ import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import fastifyRequestLogger from '@mgcrea/fastify-request-logger';
 import { fastifyRequestContext } from '@fastify/request-context';
 import mongo from '@infrastructure/database/plugins/mongo';
-import rabbitmq from '@infrastructure/queues/plugins/rabbitmq';
+import nats from '@infrastructure/queues/plugins/nats';
 
 import docs from '@infrastructure/http/plugins/docs';
 import sendAppError from '@infrastructure/http/plugins/sendAppError';
@@ -93,7 +93,7 @@ export const createServer = async (): Promise<FastifyInstance> => {
   const { PROJECTID: projectId = 'TestProject' } = server.config;
   await server.register(fastifyRequestLogger); //, { logBody: true }
   await server.register(docs);
-  await server.register(rabbitmq);
+  await server.register(nats);
   await server.register(mongo);
   await server.register(typesense);
   await server.register(sendAppError);

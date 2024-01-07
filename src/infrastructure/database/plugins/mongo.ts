@@ -33,7 +33,7 @@ export default fp(async function (server: FastifyInstance) {
   const { MONGO_URL: mongoUrl } = server.config;
   await server.register(mongo, { forceClose: true, url: mongoUrl, monitorCommands: true });
 
-  server.log.info(`Conected to MongoDB at [${mongoUrl}]`);
+  server.log.info(`${yellow('MongoDB')} ${green('starting in')} [${mongoUrl}]`);
 
   // Log
   const dbOut = bold(yellow('→')) + yellow('DB:');

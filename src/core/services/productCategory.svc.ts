@@ -74,6 +74,13 @@ export class ProductCategoryService implements IProductCategoryService {
       ...payload
     });
     if (result.err) return result;
+    this.messages.publish(`global.productCategory.insert`, {
+      source: toEntity(result.val),
+      metadata: {
+        type: 'entityInsert',
+        entity: 'productCategory'
+      }
+    });
     return new Ok(toEntity(result.val));
   }
 
@@ -105,7 +112,7 @@ export class ProductCategoryService implements IProductCategoryService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.messages.publish(this.config.EXCHANGE, this.config.ENTITY_UPDATE_ROUTE, {
+      this.messages.publish('global.productCategory.update', {
         entity: 'productCategory',
         source: entity,
         difference,
@@ -113,7 +120,7 @@ export class ProductCategoryService implements IProductCategoryService {
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.messages.publish(this.config.EXCHANGE, sideEffect.action, {
+        this.messages.publish('global.productCategory.update.sideEffect', {
           ...sideEffect.data,
           metadata: { type: sideEffect.action }
         });

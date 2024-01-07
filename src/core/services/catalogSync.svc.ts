@@ -94,6 +94,13 @@ export class CatalogSyncService implements ICatalogSyncService {
       ...payload
     });
     if (result.err) return result;
+    this.messages.publish('global.product.insert', {
+      source: toEntity(result.val),
+      metadata: {
+        type: 'entityInsert',
+        entity: 'catalogSync'
+      }
+    });
     return new Ok(toEntity(result.val));
   }
 
@@ -125,7 +132,7 @@ export class CatalogSyncService implements ICatalogSyncService {
       if (saveResult.err) return saveResult;
       toUpdateEntity.version = version + 1;
       // Send differences via messagging
-      this.messages.publish(this.config.EXCHANGE, this.config.ENTITY_UPDATE_ROUTE, {
+      this.messages.publish('global.catalogSync.update', {
         entity: 'catalogSync',
         source: entity,
         difference,
@@ -133,7 +140,7 @@ export class CatalogSyncService implements ICatalogSyncService {
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.messages.publish(this.config.EXCHANGE, sideEffect.action, {
+        this.messages.publish('global.catalogSync.update.sideEffect', {
           ...sideEffect.data,
           metadata: { type: sideEffect.action }
         });

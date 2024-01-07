@@ -1,12 +1,15 @@
 import { Value } from '@sinclair/typebox/value';
 import { green, red, magenta, yellow, bold } from 'kolorist';
 import { IProductService, ProductService } from '../product.svc';
+import { RateLimit } from 'async-sema';
 
 export class PricesIndexerListener {
   private server: any;
   private productService: IProductService;
   private catalogs: string[];
   private msgIn = bold(yellow('←')) + yellow('MSG:');
+  private lim = RateLimit(10); // rps
+  private TOPIC = `*.price.*`;
 
   constructor(server: any) {
     this.server = server;
@@ -16,36 +19,15 @@ export class PricesIndexerListener {
 
   public start() {
     this.server.log.info(
-      `${magenta('#')}  ${yellow('PriceIndexingService')} ${green('starting in')} ${
-        this.server.config.PRICES_INDEXING_ROUTE
-      }/${this.server.config.PRICES_INDEXING_QUEUE} for ${this.catalogs} catalogs`
+      `${yellow('ProdiceIndexingService')} ${green('starting in')} [${this.TOPIC}] for [${this.catalogs}] catalogs`
     );
-    this.server.messages.subscribe(
-      {
-        routingKey: this.server.config.PRICES_INDEXING_ROUTE,
-        queue: {
-          exclusive: true,
-          autoDelete: true,
-          name: this.server.config.PRICES_INDEXING_QUEUE
-        },
-        exchange: {
-          type: 'topic',
-          durable: false,
-          name: this.server.config.EXCHANGE
-        },
-        consumerOptions: {
-          noAck: true
-        }
-      },
-      (data: any) => {
-        this.handler(data);
-      }
-    );
+    this.server.messages.subscribe(this.TOPIC, this.handler.bind(this));
   }
 
   private async handler(data: any) {
     if (data.metadata.entity !== 'price') return;
     if (!this.catalogs.includes(data.metadata.catalogId)) return;
+    await this.lim();
     if (this.server.log.isLevelEnabled('debug'))
       this.server.log.debug(
         `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} indexing ${green(data.source.id)}`
@@ -65,16 +47,18 @@ export class PricesIndexerListener {
         this.server.log.error(`Error indexing price ${data.source.id}`, productResult.err);
         return;
       }
-      await this.server.search.client
-        .collections('products')
-        .documents(productResult.val[0].id)
-        .update({ prices: data.source });
-      // await this.retryWithDelay(async () => {
-      //   await this.server.search.client
-      //     .collections('products')
-      //     .documents(productResult.val[0].id)
-      //     .update({ prices: data.source });
-      // });
+      // await this.server.search.client
+      //   .collections('products')
+      //   .documents(productResult.val[0].id)
+      //   .update({ prices: data.source });
+      await this.retryWithDelay(async () => {
+        await this.server.search.client
+          .collections('products')
+          .documents(productResult.val[0].id)
+          .update({ prices: data.source, price: data.source.predicates[0].value.centAmount / 100 });
+      }).catch((err: any) => {
+        console.log('Error indexing price for product', productResult.val[0].id, err.message);
+      });
     }
   }
 

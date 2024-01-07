@@ -18,26 +18,7 @@ const ConfigSchema = Type.Strict(
     API_PORT: Type.Number(),
     MONGO_URL: Type.String(),
     PROJECTID: Type.Optional(Type.String()),
-
-    EXCHANGE: Type.Optional(Type.String()),
-
-    AUDITLOG_QUEUE: Type.Optional(Type.String()),
-    AUDITLOG_ROUTE: Type.Optional(Type.String()),
-
-    PRODUCTS_INDEXING_QUEUE: Type.Optional(Type.String()),
-    PRODUCTS_INDEXING_ROUTE: Type.Optional(Type.String()),
-    PRICES_INDEXING_QUEUE: Type.Optional(Type.String()),
-    PRICES_INDEXING_ROUTE: Type.Optional(Type.String()),
-
-    ENTITY_UPDATE_ROUTE: Type.Optional(Type.String()),
-
-    CC_TREE_ROUTE: Type.Optional(Type.String()),
-    CC_TREE_QUEUE: Type.Optional(Type.String()),
-    RABBITMQ_HOST: Type.Optional(Type.String()),
-    RABBITMQ_PORT: Type.Optional(Type.String()),
-    RABBITMQ_USERNAME: Type.Optional(Type.String()),
-    RABBITMQ_PASSWORD: Type.Optional(Type.String()),
-    RABBITMQ_VIRTUAL_HOST: Type.Optional(Type.String()),
+    NATS_URL: Type.Optional(Type.String()),
     CACHE_JSON_SCHEMAS: Type.Boolean({ default: true }),
     TYPESENSE_HOST: Type.Optional(Type.String()),
     TYPESENSE_PORT: Type.Optional(Type.String()),
