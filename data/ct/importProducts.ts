@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { CT } from '../../src/core/lib/ct';
 import { FieldPredicateOperators, createPredicateExpression } from '../../src/core/services/price.svc';
 import { Db, MongoClient } from 'mongodb';

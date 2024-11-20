@@ -19,8 +19,8 @@ export class AuditLogListener {
 
   private handler = async (data: any, server: any) => {
     if (!data.metadata.entity) return;
-    if (server.log.isLevelEnabled('debug'))
-      server.log.debug(
+    if (this.server.log.isLevelEnabled('debug'))
+      this.server.log.debug(
         `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} auditLog indexing ${green(data.source.id)}`
       );
     this.service.createAuditLog({

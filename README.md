@@ -94,7 +94,7 @@ The codebase is organized into the following directories:
 ## Usage Examples
 
 - **Creating a New Product**:
-  Example usage with the Postman collection in `doc/ct2.postman_collection.json` for creating a product with classifications and categories.
+  Example usage with the Postman collection in `doc/ecomm.postman_collection.json` for creating a product with classifications and categories.
 
 - **Synchronizing Catalogs**:
   Use the API to synchronize products between the `stage` and `online` catalogs, ensuring data consistency across environments.
@@ -110,7 +110,7 @@ yarn test
 
 ## Documentation
 
-Refer to the [Postman Collection](doc/ct2.postman_collection.json) for detailed API documentation and usage examples for product management operations.
+Refer to the [Postman Collection](doc/ecomm.postman_collection.json) for detailed API documentation and usage examples for product management operations.
 
 ## Contributing
 

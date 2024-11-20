@@ -17,7 +17,7 @@
 //   laptops
 //     (cpu)
 
-use ct2;
+use ecomm;
 
 db.Catalog.deleteMany({});
 db.CatalogSync.deleteMany({});

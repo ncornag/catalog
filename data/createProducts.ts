@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { Ok, Err, Result } from 'ts-results';
 import { AppError, ErrorCode } from '../src/core/lib/appError';
 import { fakerEN, fakerES, Randomizer } from '@faker-js/faker';

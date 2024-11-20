@@ -19,7 +19,7 @@ export class PricesIndexerListener {
 
   public start() {
     this.server.log.info(
-      `${yellow('ProdiceIndexingService')} ${green('starting in')} [${this.TOPIC}] for [${this.catalogs}] catalogs`
+      `${yellow('PricesIndexingService')} ${green('starting in')} [${this.TOPIC}] for [${this.catalogs}] catalogs`
     );
     this.server.messages.subscribe(this.TOPIC, this.handler.bind(this));
   }

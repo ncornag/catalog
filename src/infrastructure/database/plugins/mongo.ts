@@ -2,7 +2,7 @@ import fp from 'fastify-plugin';
 import mongo from '@fastify/mongodb';
 import { FastifyInstance } from 'fastify';
 import { green, red, magenta, yellow, bold } from 'kolorist';
-import { Collection } from '@fastify/mongodb/node_modules/mongodb';
+import { Collection } from 'mongodb';
 import { requestContext } from '@fastify/request-context';
 import { REQUEST_ID_STORE_KEY, PROJECT_ID_STORE_KEY } from '@infrastructure/http/plugins/requestContext';
 
