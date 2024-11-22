@@ -1,15 +1,16 @@
-import { SetKeyActionHandler } from './setKey.handler';
-import { ChangeNameActionHandler } from './changeName.handler';
-import { ChangeKeywordsActionHandler } from './changeKeywords.handler';
-import { ChangeParentActionHandler } from '@core/lib/tree';
-import { Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { SetKeyActionHandler } from './setKey.handler.ts';
+import { ChangeNameActionHandler } from './changeName.handler.ts';
+import { ChangeKeywordsActionHandler } from './changeKeywords.handler.ts';
+import { ChangeParentActionHandler } from '#core/lib/tree';
+import { AppError } from '#core/lib/appError';
 
 export interface ActionHandlerDAO {
   [key: string]: any;
 }
-export interface ActionData {}
-export interface ActionHandlerRepository {}
+export interface ActionData { }
+export interface ActionHandlerRepository { }
 
 export interface ActionHandler {
   run(

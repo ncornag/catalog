@@ -1,17 +1,18 @@
-import { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
-import { Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { type FastifyInstance, type FastifyPluginOptions, type FastifyReply, type FastifyRequest } from 'fastify';
+import { AppError } from '#core/lib/appError';
 import {
-  CreateProductCategoryBody,
-  UpdateProductCategoryBody,
-  FindProductCategoryParms,
+  type CreateProductCategoryBody,
+  type UpdateProductCategoryBody,
+  type FindProductCategoryParms,
   postProductCategorySchema,
   updateProductCategorySchema
-} from '@infrastructure/http/schemas/productCategory.schemas';
-import { ProductCategoryService } from '@core/services/productCategory.svc';
-import { ProductCategory } from '@core/entities/productCategory';
+} from '#infrastructure/http/schemas/productCategory.schemas';
+import { ProductCategoryService } from '#core/services/productCategory.svc';
+import { type ProductCategory } from '#core/entities/productCategory';
 
-export default <FastifyPluginAsync>async function (server: FastifyInstance, opts: FastifyPluginOptions) {
+export default async function (server: FastifyInstance, opts: FastifyPluginOptions) {
   let service = ProductCategoryService.getInstance(server);
 
   // CREATE

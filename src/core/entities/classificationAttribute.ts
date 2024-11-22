@@ -1,19 +1,19 @@
 import { Type, type Static } from '@sinclair/typebox';
 
 // Attributes that can be used as nested types
-export enum ClassificationAttributeBaseType {
-  NUMBER = 'number',
-  TEXT = 'text',
-  DATETIME = 'datetime',
-  BOOLEAN = 'boolean',
-  ENUM = 'enum',
-  OBJECT = 'object',
-  REFERENCE = 'reference'
+export const ClassificationAttributeBaseType: Record<string, string> = {
+  NUMBER: 'number',
+  TEXT: 'text',
+  DATETIME: 'datetime',
+  BOOLEAN: 'boolean',
+  ENUM: 'enum',
+  OBJECT: 'object',
+  REFERENCE: 'reference'
 }
 
 // Other attribute types
-export enum ClassificationAttributeComplexType {
-  LIST = 'list'
+export const ClassificationAttributeComplexType: Record<string, string> = {
+    LIST: 'list'
 }
 
 // All attribute types

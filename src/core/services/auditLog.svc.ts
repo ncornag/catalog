@@ -1,9 +1,10 @@
-import { Err, Ok, Result } from 'ts-results';
-import { AppError, ErrorCode } from '@core/lib/appError';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError, ErrorCode } from '#core/lib/appError';
 import { nanoid } from 'nanoid';
-import { type AuditLog } from '@core/entities/auditLog';
-import { AuditLogDAO } from '@infrastructure/repositories/dao/auditLog.dao.schema';
-import { IAuditLogRepository } from '@core/repositories/auditLog.repo';
+import { type AuditLog } from '#core/entities/auditLog';
+import { type AuditLogDAO } from '#infrastructure/repositories/dao/auditLog.dao.schema';
+import { type IAuditLogRepository } from '#core/repositories/auditLog.repo';
 import { JSONPath } from 'jsonpath-plus';
 
 // SERVICE INTERFACE
@@ -55,7 +56,9 @@ export class AuditlogService implements IAuditLogService {
   // FIND AUDITLOGS
   public async findAuditLogs(catalogId: string): Promise<Result<AuditLog[], AppError>> {
     const result = await this.repo.find({ catalogId }, {});
-    const massagedResults = result.val.map((e: AuditLog) => {
+    if (result.err) return result;
+    // Add old values
+    const massagedResults = result.val.map((e: AuditLogDAO) => {
       if (e.edits == null) return e;
       return {
         ...e,
@@ -64,8 +67,6 @@ export class AuditlogService implements IAuditLogService {
         })
       };
     });
-
-    if (result.err) return result;
     return new Ok(massagedResults.map((e: AuditLogDAO) => toEntity(e)));
   }
 }

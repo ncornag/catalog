@@ -1,17 +1,18 @@
-import { Err, Ok, Result } from 'ts-results';
-import { AppError, ErrorCode } from '@core/lib/appError';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError, ErrorCode } from '#core/lib/appError';
 import { Value } from '@sinclair/typebox/value';
 import { nanoid } from 'nanoid';
-import { type CatalogSync, UpdateCatalogSyncAction } from '@core/entities/catalogSync';
-import { SyncCatalogBody, type CreateCatalogSyncBody } from '@infrastructure/http/schemas/catalogSync.schemas';
-import { CatalogSyncDAO } from '@infrastructure/repositories/dao/catalogSync.dao.schema';
-import { ActionHandlersList } from '@core/services/actions';
-import { ICatalogSyncRepository } from '@core/repositories/catalogSync.repo';
-import { UpdateEntityActionsRunner } from '@core/lib/updateEntityActionsRunner';
-import { ChangeNameActionHandler } from './actions/changeName.handler';
-import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler';
-import { Config } from '@infrastructure/http/plugins/config';
-var patch = require('mongo-update');
+import { type CatalogSync, UpdateCatalogSyncAction } from '#core/entities/catalogSync';
+import { type SyncCatalogBody, type CreateCatalogSyncBody } from '#infrastructure/http/schemas/catalogSync.schemas';
+import { type CatalogSyncDAO } from '#infrastructure/repositories/dao/catalogSync.dao.schema';
+import { type ActionHandlersList } from '#core/services/actions/index';
+import { type ICatalogSyncRepository } from '#core/repositories/catalogSync.repo';
+import { UpdateEntityActionsRunner } from '#core/lib/updateEntityActionsRunner';
+import { ChangeNameActionHandler } from './actions/changeName.handler.ts';
+import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler.ts';
+import { type Config } from '#infrastructure/http/plugins/config';
+import patch from 'mongo-update';
 
 // SERVICE INTERFACE
 export interface ICatalogSyncService {

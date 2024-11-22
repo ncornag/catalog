@@ -1,17 +1,18 @@
-import { Err, Ok, Result } from 'ts-results';
-import { AppError, ErrorCode } from '@core/lib/appError';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError, ErrorCode } from '#core/lib/appError';
 import { Value } from '@sinclair/typebox/value';
 import { nanoid } from 'nanoid';
-import { type ProductCategory, UpdateProductCategoryAction } from '@core/entities/productCategory';
-import { type CreateProductCategoryBody } from '@infrastructure/http/schemas/productCategory.schemas';
-import { ProductCategoryDAO } from '@infrastructure/repositories/dao/productCategory.dao.schema';
-import { ActionHandlersList } from '@core/services/actions';
-import { IProductCategoryRepository } from '@core/repositories/productCategory.repo';
-import { SetKeyActionHandler } from './actions/setKey.handler';
-import { ChangeNameActionHandler } from './actions/changeName.handler';
-import { ChangeParentActionHandler } from '@core/lib/tree';
-import { UpdateEntityActionsRunner } from '@core/lib/updateEntityActionsRunner';
-import { Config } from '@infrastructure/http/plugins/config';
+import { type ProductCategory, UpdateProductCategoryAction } from '#core/entities/productCategory';
+import { type CreateProductCategoryBody } from '#infrastructure/http/schemas/productCategory.schemas';
+import { type ProductCategoryDAO } from '#infrastructure/repositories/dao/productCategory.dao.schema';
+import { type ActionHandlersList } from '#core/services/actions/index';
+import { type IProductCategoryRepository } from '#core/repositories/productCategory.repo';
+import { SetKeyActionHandler } from './actions/setKey.handler.ts';
+import { ChangeNameActionHandler } from './actions/changeName.handler.ts';
+import { ChangeParentActionHandler } from '#core/lib/tree';
+import { UpdateEntityActionsRunner } from '#core/lib/updateEntityActionsRunner';
+import { type Config } from '#infrastructure/http/plugins/config';
 
 // SERVICE INTERFACE
 interface IProductCategoryService {
@@ -120,8 +121,9 @@ export class ProductCategoryService implements IProductCategoryService {
       });
       // Send side effects via messagging
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
-        this.messages.publish('global.productCategory.update.sideEffect', {
+        this.messages.publish(sideEffect.action, {
           ...sideEffect.data,
+          entity: 'productCategory',
           metadata: { type: sideEffect.action }
         });
       });

@@ -1,7 +1,7 @@
-import { Err, Ok, Result } from 'ts-results';
-import { AppError, ErrorCode } from './appError';
-import { ClassificationCategoryUpdateActionType } from '@core/entities/classificationCategory';
-import { ActionHandler, ActionHandlerResult } from '@core/services/actions';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError, ErrorCode } from './appError.ts';
+import { type ActionHandler, type ActionHandlerResult } from '#core/services/actions/index';
 import { Type, type Static } from '@sinclair/typebox';
 
 export const TreeFieldsSchema = {
@@ -16,7 +16,7 @@ export interface ITree<T> {
 }
 
 export interface ITreeRepo<DAO> {
-  find(catalogId: string, query: any, options: any): Promise<Result<DAO[], AppError>>;
+  find(query: any, options: any): Promise<Result<DAO[], AppError>>;
 }
 
 export const UpdateChangeParentSchema = Type.Object(
@@ -27,31 +27,6 @@ export const UpdateChangeParentSchema = Type.Object(
   { additionalProperties: false }
 );
 export type UpdateChangeParent = Static<typeof UpdateChangeParentSchema>;
-
-// export function createChangeParentActionHandler<DAO extends ITree<string>, REPO extends ITreeRepo<DAO>>(
-//   server: any
-// ): ActionHandler {
-//   return {
-//     run: async (
-//       entity: DAO,
-//       toUpdateEntity: DAO,
-//       action: UpdateChangeParent,
-//       repo: REPO
-//     ): Promise<Result<ActionHandlerResult, AppError>> => {
-//       if (entity.parent === action.parent) return new Ok({ update: {} });
-//       const parentResult = await repo.find({ _id: action.parent }, { projection: { _id: 0, ancestors: 1 } });
-//       if (parentResult.err) return new Err(new AppError(ErrorCode.BAD_REQUEST, `Can't find parent [${action.parent}]`));
-//       const ancestors: string[] = parentResult.val[0].ancestors || [];
-//       ancestors.push(action.parent);
-//       toUpdateEntity.ancestors = ancestors;
-//       toUpdateEntity.parent = action.parent;
-//       return new Ok({
-//         update: { $set: { parent: action.parent, ancestors } },
-//         sideEffects: [{ action: server.config.CC_TREE_ROUTE, data: { id: entity._id, oldAncestors: entity.ancestors } }]
-//       });
-//     }
-//   };
-// }
 
 export class ChangeParentActionHandler<DAO extends ITree<string>, REPO extends ITreeRepo<DAO>> {
   private server: any;
@@ -74,8 +49,9 @@ export class ChangeParentActionHandler<DAO extends ITree<string>, REPO extends I
     return new Ok({
       update: { $set: { parent: action.parent, ancestors } },
       sideEffects: [
-        { action: this.server.config.CC_TREE_ROUTE, data: { id: entity._id, oldAncestors: entity.ancestors } }
+        { action: this.server.config.CC_TREE_ROUTE, data: { id: entity._id, ancestors: ancestors, oldAncestors: entity.ancestors } }
       ]
     });
   }
 }
+

@@ -1,19 +1,20 @@
-import { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
-import { Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
-import { CatalogSyncService } from '@core/services/catalogSync.svc';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { type FastifyInstance, type FastifyPluginOptions, type FastifyReply, type FastifyRequest } from 'fastify';
+import { AppError } from '#core/lib/appError';
+import { CatalogSyncService } from '#core/services/catalogSync.svc';
 import {
   syncCatalogSchema,
-  SyncCatalogBody,
+  type SyncCatalogBody,
   postCatalogSyncSchema,
-  CreateCatalogSyncBody,
-  FindCatalogSyncParms,
-  UpdateCatalogSyncBody,
+  type CreateCatalogSyncBody,
+  type FindCatalogSyncParms,
+  type UpdateCatalogSyncBody,
   updateCatalogSyncSchema
-} from '@infrastructure/http/schemas/catalogSync.schemas';
-import { CatalogSync } from '@core/entities/catalogSync';
+} from '#infrastructure/http/schemas/catalogSync.schemas';
+import { type CatalogSync } from '#core/entities/catalogSync';
 
-export default <FastifyPluginAsync>async function (server: FastifyInstance, opts: FastifyPluginOptions) {
+export default async function (server: FastifyInstance, opts: FastifyPluginOptions) {
   let service = CatalogSyncService.getInstance(server);
 
   // SYNC

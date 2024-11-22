@@ -1,6 +1,6 @@
 import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
-import { UpdateProductAction, ProductSchema } from '@core/entities/product';
+import { UpdateProductAction, ProductSchema } from '#core/entities/product';
 
 const defaultExample = {
   name: 'Root Category',
@@ -11,7 +11,7 @@ const ProductResponse = Type.Omit(ProductSchema, ['catalog'], {
   examples: [
     {
       id: '63cd0e4be59031edffa39f5c',
-      verdion: 0,
+      version: 0,
       ...defaultExample,
       createdAt: '2021-01-01T00:00:00.000Z'
     }

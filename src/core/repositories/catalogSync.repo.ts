@@ -1,7 +1,8 @@
-import { Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
-import { CatalogSync } from '@core/entities/catalogSync';
-import { CatalogSyncDAO } from '@infrastructure/repositories/dao/catalogSync.dao.schema';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError } from '#core/lib/appError';
+import { type CatalogSync } from '#core/entities/catalogSync';
+import { type CatalogSyncDAO } from '#infrastructure/repositories/dao/catalogSync.dao.schema';
 
 export interface ICatalogSyncRepository {
   create: (category: CatalogSync) => Promise<Result<CatalogSyncDAO, AppError>>;

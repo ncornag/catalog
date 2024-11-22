@@ -1,17 +1,18 @@
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
 import { nanoid } from 'nanoid';
-import { Err, Ok, Result } from 'ts-results';
-import { AppError, ErrorCode } from '@core/lib/appError';
-import { Value, type Price } from '@core/entities/price';
-import { PriceDAO } from '@infrastructure/repositories/dao/price.dao.schema';
-import { IPriceRepository } from '@core/repositories/price.repo';
-import { Cart, CartItem, CartProduct } from '@core/entities/cart';
-import { IProductService, ProductService } from './product.svc';
+import { AppError, ErrorCode } from '#core/lib/appError';
+import { type Value, type Price } from '#core/entities/price';
+import { type PriceDAO } from '#infrastructure/repositories/dao/price.dao.schema';
+import { type IPriceRepository } from '#core/repositories/price.repo';
+import { type Cart, type CartItem, type CartProduct } from '#core/entities/cart';
+import { type IProductService, ProductService } from './product.svc.ts';
 import { green, magenta, yellow, gray, reset } from 'kolorist';
-import { Expressions } from '@core/lib/expressions';
+import { Expressions } from '#core/lib/expressions';
 import fetch from 'node-fetch';
 import NodeCache from 'node-cache';
-import { Config } from '@infrastructure/http/plugins/config';
-import { CreatePriceBody } from '@infrastructure/http/schemas/price.schemas';
+import { type Config } from '#infrastructure/http/plugins/config';
+import { type CreatePriceBody } from '#infrastructure/http/schemas/price.schemas';
 
 // SERVICE INTERFACE
 export interface IPriceService {

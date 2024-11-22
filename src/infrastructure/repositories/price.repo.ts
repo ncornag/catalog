@@ -1,9 +1,10 @@
-import { Db, Collection } from '@fastify/mongodb/node_modules/mongodb/mongodb';
-import { Ok, Err, Result } from 'ts-results';
-import { ErrorCode, AppError } from '@core/lib/appError';
-import { type IPriceRepository } from '@core/repositories/price.repo';
-import { Price } from '@core/entities/price';
-import { PriceDAO } from '@infrastructure/repositories/dao/price.dao.schema';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { Db, Collection } from 'mongodb';
+import { ErrorCode, AppError } from '#core/lib/appError';
+import { type IPriceRepository } from '#core/repositories/price.repo';
+import { type Price } from '#core/entities/price';
+import { type PriceDAO } from '#infrastructure/repositories/dao/price.dao.schema';
 
 export const getPriceCollection = async (
   db: Db
@@ -64,6 +65,7 @@ export class PriceRepository implements IPriceRepository {
     for await (const doc of cursor) {
       result.push(doc);
     }
-    return new Ok(result);
+
+    return Ok(result);
   }
 }

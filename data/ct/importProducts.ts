@@ -13,9 +13,9 @@ const server = {
   config: process.env
 };
 
-enum VersionSuffix {
-  STAGE = 'Stage',
-  ONLINE = 'Online'
+const CatalogNames: Record<string, string> = {
+  STAGE: 'Stage',
+  ONLINE: 'Online',
 }
 
 class ProductImporter {
@@ -28,10 +28,6 @@ class ProductImporter {
   private col: any = {};
   private logCount = 100;
   private projectId = 'TestProject';
-  private Catalog = {
-    STAGE: 'stage',
-    ONLINE: 'online'
-  };
 
   constructor(server: any, stageSufix: string, currentSufix: string) {
     this.server = server;
@@ -99,7 +95,7 @@ class ProductImporter {
         _id: p.id + '#' + v.id,
         version: p.version,
         projectId,
-        catalog: catalog === this.ct.Catalog.STAGED ? this.Catalog.STAGE : this.Catalog.ONLINE,
+        catalog: catalog === this.ct.Catalog.STAGED ? CatalogNames.STAGE.toLowerCase() : CatalogNames.ONLINE.toLowerCase(),
         createdAt: p.createdAt,
         type: 'variant',
         parent: parent,
@@ -330,8 +326,8 @@ class ProductImporter {
 
 const firstPriceToImport = parseInt(process.argv[2]) || 0;
 const productsToImport = parseInt(process.argv[3]) || 1;
-const stageSufix = process.argv[4] || VersionSuffix.STAGE;
-const currentSufix = process.argv[5] || VersionSuffix.ONLINE;
+const stageSufix = process.argv[4] || CatalogNames.STAGE;
+const currentSufix = process.argv[5] || CatalogNames.ONLINE;
 
 const productImporter = new ProductImporter(server, stageSufix, currentSufix);
 

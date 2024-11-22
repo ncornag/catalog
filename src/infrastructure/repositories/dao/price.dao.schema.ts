@@ -1,5 +1,5 @@
-import { PriceSchema } from '@core/entities/price';
-import { Static, Type } from '@sinclair/typebox';
+import { PriceSchema } from '#core/entities/price';
+import { type Static, Type } from '@sinclair/typebox';
 
 // DAO
 export const PriceDAOSchema = Type.Composite([Type.Omit(PriceSchema, ['id']), Type.Object({ _id: Type.String() })]);

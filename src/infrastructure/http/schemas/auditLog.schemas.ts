@@ -1,6 +1,6 @@
 import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
-import { AuditLogSchema } from '@core/entities/auditLog';
+import { AuditLogSchema } from '#core/entities/auditLog';
 
 // FIXME: This is a hack to get the example to work, cleanup the schemas
 
@@ -13,7 +13,7 @@ const AuditLogResponse = Type.Composite([AuditLogSchema], {
   examples: [
     {
       id: '63cd0e4be59031edffa39f5c',
-      verdion: 0,
+      version: 0,
       ...defaultExample,
       createdAt: '2021-01-01T00:00:00.000Z'
     }
@@ -30,7 +30,7 @@ export type CreateAuditLogBody = Static<typeof CreateAuditLogBodySchema>;
 export const FindAuditLogParmsSchema = Type.Object({ id: Type.String() });
 export type FindAuditLogParms = Static<typeof FindAuditLogParmsSchema>;
 
-export const FindAuditLogsQueryStringSchema = Type.Object({ catalogId: Type.String() });
+export const FindAuditLogsQueryStringSchema = Type.Object({ catalog: Type.String() });
 export type FindAuditLogsQueryString = Static<typeof FindAuditLogsQueryStringSchema>;
 
 // ROUTE SCHEMAS

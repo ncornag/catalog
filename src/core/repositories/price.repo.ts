@@ -1,7 +1,8 @@
-import { Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
-import { Price } from '@core/entities/price';
-import { PriceDAO } from '@infrastructure/repositories/dao/price.dao.schema';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError } from '#core/lib/appError';
+import { type Price } from '#core/entities/price';
+import { type PriceDAO } from '#infrastructure/repositories/dao/price.dao.schema';
 
 export interface IPriceRepository {
   create: (catalogId: string, price: Price) => Promise<Result<PriceDAO, AppError>>;

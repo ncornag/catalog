@@ -1,15 +1,16 @@
-import { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
-import { Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { type FastifyInstance, type FastifyPluginOptions, type FastifyReply, type FastifyRequest } from 'fastify';
+import { AppError } from '#core/lib/appError';
 import {
-  FindProductParms,
+  type FindProductParms,
   FindProductParmsSchema,
   FindProductQueryStringSchema
-} from '@infrastructure/http/schemas/product.schemas';
-import { ProductServiceV1 } from '@core/services/productV1.svc';
-import { Product } from '@core/entities/product';
+} from '#infrastructure/http/schemas/product.schemas';
+import { ProductServiceV1 } from '#core/services/productV1.svc';
+import { type Product } from '#core/entities/product';
 
-export default <FastifyPluginAsync>async function (server: FastifyInstance, opts: FastifyPluginOptions) {
+export default async function (server: FastifyInstance, opts: FastifyPluginOptions) {
   let service = ProductServiceV1.getInstance(server);
 
   // GET

@@ -1,11 +1,12 @@
-import { FastifyInstance, FastifyPluginAsync, FastifyPluginOptions, FastifyReply, FastifyRequest } from 'fastify';
-import { Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
-import { PriceService as PriceService } from '@core/services/price.svc';
-import { Price } from '@core/entities/price';
-import { CreatePriceBody, FindPriceQueryString, postPriceSchema } from '../schemas/price.schemas';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { type FastifyInstance, type FastifyPluginOptions, type FastifyReply, type FastifyRequest } from 'fastify';
+import { AppError } from '#core/lib/appError';
+import { PriceService as PriceService } from '#core/services/price.svc';
+import { type Price } from '#core/entities/price';
+import { type CreatePriceBody, type FindPriceQueryString, postPriceSchema } from '../schemas/price.schemas.ts';
 
-export default <FastifyPluginAsync>async function (server: FastifyInstance, opts: FastifyPluginOptions) {
+export default async function (server: FastifyInstance, opts: FastifyPluginOptions) {
   let service = PriceService.getInstance(server);
 
   // CREATE

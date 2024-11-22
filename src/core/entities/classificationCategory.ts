@@ -1,17 +1,16 @@
 import { Type, type Static, Optional } from '@sinclair/typebox';
-import { ClassificationAttributeSchema } from '@core/entities/classificationAttribute';
-import { TreeFieldsSchema, UpdateChangeParent, UpdateChangeParentSchema } from '@core/lib/tree';
-import { AuditFields } from '@core/lib/auditFields';
+import { ClassificationAttributeSchema } from '#core/entities/classificationAttribute';
+import { TreeFieldsSchema, type UpdateChangeParent, UpdateChangeParentSchema } from '#core/lib/tree';
+import { AuditFields } from '#core/lib/auditFields';
 
 const keyAttributes = { minLength: 2, maxLength: 256, pattern: '^[A-Za-z0-9_-]+$' };
 
 // Action Types
-export enum ClassificationCategoryUpdateActionType {
-  SETKEY = 'setKey',
-  CHANGENAME = 'changeName',
-  CHANGEPARENT = 'changeParent'
+export const ClassificationCategoryUpdateActionType: Record<string, string> = {
+  SETKEY: 'setKey',
+  CHANGENAME: 'changeName',
+  CHANGEPARENT: 'changeParent'
 }
-
 // ACTIONS
 
 // setKey action

@@ -1,14 +1,12 @@
 import fetch from 'node-fetch';
-import { createApiBuilderFromCtpClient } from '@commercetools/platform-sdk';
+import { createApiBuilderFromCtpClient, ByProjectKeyRequestBuilder } from '@commercetools/platform-sdk';
 import { Value } from '@sinclair/typebox/value';
-
 import {
   ClientBuilder,
   // Import middlewares
   type AuthMiddlewareOptions, // Required for auth
   type HttpMiddlewareOptions // Required for sending HTTP requests
 } from '@commercetools/sdk-client-v2';
-import { ByProjectKeyRequestBuilder } from '@commercetools/platform-sdk/dist/declarations/src/generated/client/by-project-key-request-builder';
 
 export class CT {
   private server: any;
@@ -161,14 +159,14 @@ export class CT {
       const tiers =
         price.predicates.length > 1
           ? price.predicates
-              .filter((p: any) => p.constraints.minimumQuantity !== undefined)
-              .sort((a: any, b: any) => a.constraints.minimumQuantity > b.constraints.minimumQuantity)
-              .map((p: any) => {
-                return {
-                  minimumQuantity: p.constraints.minimumQuantity,
-                  value: p.value
-                };
-              })
+            .filter((p: any) => p.constraints.minimumQuantity !== undefined)
+            .sort((a: any, b: any) => a.constraints.minimumQuantity > b.constraints.minimumQuantity)
+            .map((p: any) => {
+              return {
+                minimumQuantity: p.constraints.minimumQuantity,
+                value: p.value
+              };
+            })
           : undefined;
       return Object.assign(
         {

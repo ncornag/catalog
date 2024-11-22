@@ -1,6 +1,6 @@
-import { ProductCategorySchema } from '@core/entities/productCategory';
-import { ITree } from '@core/lib/tree';
-import { Static, Type } from '@sinclair/typebox';
+import { ProductCategorySchema } from '#core/entities/productCategory';
+import { type ITree } from '#core/lib/tree';
+import { type Static, Type } from '@sinclair/typebox';
 
 // DAO
 export const ProductCategoryDAOSchema = Type.Composite([

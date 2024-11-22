@@ -1,7 +1,8 @@
-import { Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
-import { Catalog } from '@core/entities/catalog';
-import { CatalogDAO } from '@infrastructure/repositories/dao/catalog.dao.schema';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError } from '#core/lib/appError';
+import { type Catalog } from '#core/entities/catalog';
+import { type CatalogDAO } from '#infrastructure/repositories/dao/catalog.dao.schema';
 
 export interface ICatalogRepository {
   create: (category: Catalog) => Promise<Result<CatalogDAO, AppError>>;

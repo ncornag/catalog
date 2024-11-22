@@ -1,7 +1,8 @@
 import { Value } from '@sinclair/typebox/value';
 import { green, red, magenta, yellow, bold } from 'kolorist';
-import { IProductService, ProductService } from '../product.svc';
+import { type IProductService, ProductService } from '../product.svc.ts';
 import { RateLimit } from 'async-sema';
+import pino from 'pino'
 
 export class PricesIndexerListener {
   private server: any;
@@ -19,7 +20,7 @@ export class PricesIndexerListener {
 
   public start() {
     this.server.log.info(
-      `${yellow('PricesIndexingService')} ${green('starting in')} [${this.TOPIC}] for [${this.catalogs}] catalogs`
+      `${yellow('PricesIndexingService')} ${green('listening to')} [${this.TOPIC}] ${green('for')} [${this.catalogs}] ${green('catalogs')}`
     );
     this.server.messages.subscribe(this.TOPIC, this.handler.bind(this));
   }
@@ -28,7 +29,7 @@ export class PricesIndexerListener {
     if (data.metadata.entity !== 'price') return;
     if (!this.catalogs.includes(data.metadata.catalogId)) return;
     await this.lim();
-    if (this.server.log.isLevelEnabled('debug'))
+    if (this.server.logger.isLevelEnabled('debug'))
       this.server.log.debug(
         `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} indexing ${green(data.source.id)}`
       );
@@ -36,7 +37,7 @@ export class PricesIndexerListener {
       // TODO: update Product on Price Update
       // const updates = Value.Patch({}, data.difference);
       // updates.id = data.source.id;
-      // this.server.search.client.collections('products').documents().update(updates);
+      // this.server.index.client.collections('products').documents().update(updates);
     } else if (data.metadata.type === 'entityInsert') {
       const productResult = await this.productService.findProducts(
         data.metadata.catalogId,
@@ -47,12 +48,12 @@ export class PricesIndexerListener {
         this.server.log.error(`Error indexing price ${data.source.id}`, productResult.err);
         return;
       }
-      // await this.server.search.client
+      // await this.server.index.client
       //   .collections('products')
       //   .documents(productResult.val[0].id)
       //   .update({ prices: data.source });
       await this.retryWithDelay(async () => {
-        await this.server.search.client
+        await this.server.index.client
           .collections('products')
           .documents(productResult.val[0].id)
           .update({ prices: data.source, price: data.source.predicates[0].value.centAmount / 100 });

@@ -1,4 +1,5 @@
-import { Ok, Err, Result } from 'ts-results';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
 import { AppError, ErrorCode } from '../src/core/lib/appError';
 import { fakerEN, fakerES, Randomizer } from '@faker-js/faker';
 import { Db, MongoClient } from 'mongodb';
@@ -19,9 +20,9 @@ const server = {
   config: process.env
 };
 
-enum VersionSuffix {
-  STAGE = 'Stage',
-  ONLINE = 'Online'
+const CatalogNames: Record<string, string> = {
+  STAGE: 'Stage',
+  ONLINE: 'Online',
 }
 
 class ProductCreator {
@@ -34,10 +35,6 @@ class ProductCreator {
   private col: any = {};
   private logCount = 100;
   private projectId = 'TestProject';
-  private Catalog = {
-    STAGE: 'stage',
-    ONLINE: 'online'
-  };
   private categories = Array.from({ length: 100 }, (_, i) => fakerEN.commerce.department());
   private countries = ['DE', 'ES', 'US', 'FR', 'IT', 'NL', 'PL', 'PT', 'RU', 'JP'];
   private channels = Array.from({ length: 20 }, (_, i) => `channel-${i}`);
@@ -163,10 +160,10 @@ class ProductCreator {
           size: fakerEN.string.numeric({ length: 1 }),
           brand:
             this.brands[
-              randomIntFromInterval(
-                0,
-                productsToInsert / 5 > this.brands.length ? this.brands.length - 1 : productsToInsert / 5
-              )
+            randomIntFromInterval(
+              0,
+              productsToInsert / 5 > this.brands.length ? this.brands.length - 1 : productsToInsert / 5
+            )
             ],
           popularity: randomIntFromInterval(1000, 5000),
           free_shipping: Math.random() < 0.1,
@@ -216,10 +213,10 @@ class ProductCreator {
 
     try {
       await this.col.products.staged.drop();
-    } catch (e) {}
+    } catch (e) { }
     try {
       await this.col.prices.staged.drop();
-    } catch (e) {}
+    } catch (e) { }
     console.log('Staged collections dropped successfully');
 
     let start = new Date().getTime();
@@ -228,7 +225,7 @@ class ProductCreator {
     await Promise.all(
       arr.map(async (elem) => {
         await s.acquire();
-        const base = this.createProduct(this.projectId, this.Catalog.STAGE);
+        const base = this.createProduct(this.projectId, CatalogNames.STAGE.toLowerCase());
         productsCount++;
         const baseResult = await this.writeAndLogAPI({ productsCount, start, base });
         for (let j = 0; j < variantsPerProduct; j++) {
@@ -253,8 +250,8 @@ class ProductCreator {
 const productsToInsert = parseInt(process.argv[2]) || 1;
 const variantsPerProduct = parseInt(process.argv[3]) || 1;
 const pricesPerVariant = parseInt(process.argv[4]) || 1;
-const stageSufix = process.argv[5] || VersionSuffix.STAGE;
-const currentSufix = process.argv[6] || VersionSuffix.ONLINE;
+const stageSufix = process.argv[5] || CatalogNames.STAGE;
+const currentSufix = process.argv[6] || CatalogNames.ONLINE;
 
 const productImporter = new ProductCreator(server, stageSufix, currentSufix);
 

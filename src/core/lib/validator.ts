@@ -1,10 +1,11 @@
-import Ajv from 'ajv';
-import { Ok, Err, Result } from 'ts-results';
-import { AppError, ErrorCode } from './appError';
-import { ClassificationAttribute, ClassificationAttributeType } from '@core/entities/classificationAttribute';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { Ajv } from 'ajv';
+import { AppError, ErrorCode } from './appError.ts';
+import { type ClassificationAttribute, ClassificationAttributeType } from '#core/entities/classificationAttribute';
 import { Type } from '@sinclair/typebox';
-import { IProductCategoryRepository } from '@core/repositories/productCategory.repo';
-import { IClassificationCategoryRepository } from '@core/repositories/classificationCategory.repo';
+import { type IProductCategoryRepository } from '#core/repositories/productCategory.repo';
+import { type IClassificationCategoryRepository } from '#core/repositories/classificationCategory.repo';
 
 export class Validator {
   private server: any;
@@ -182,8 +183,7 @@ export class Validator {
       return Err(
         new AppError(
           ErrorCode.BAD_REQUEST,
-          `${validateFn.errors![0].instancePath || '/'} ${validateFn.errors![0].message} ${
-            validateFn.errors![0].params.additionalProperty || ''
+          `${validateFn.errors![0].instancePath || '/'} ${validateFn.errors![0].message} ${validateFn.errors![0].params.additionalProperty || ''
           }`
         )
       );

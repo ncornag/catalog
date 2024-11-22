@@ -1,12 +1,12 @@
 import fp from 'fastify-plugin';
-import { FastifyInstance } from 'fastify';
+import { type FastifyInstance } from 'fastify';
 import { Client } from 'typesense';
-import { CollectionCreateSchema } from 'typesense/lib/Typesense/Collections';
+import { type CollectionCreateSchema } from 'typesense/lib/Typesense/Collections.js';
 import { green, yellow } from 'kolorist';
 
 declare module 'fastify' {
   export interface FastifyInstance {
-    search: { client: Client };
+    index: { client: Client };
   }
 }
 
@@ -25,7 +25,7 @@ export default fp(async function (server: FastifyInstance) {
     connectionTimeoutSeconds: 2
   });
 
-  server.decorate('search', {
+  server.decorate('index', {
     client
   });
 
@@ -105,12 +105,12 @@ export default fp(async function (server: FastifyInstance) {
     await client
       .collections('products')
       .delete()
-      .catch(function (error) {});
+      .catch(function (error) { });
 
   await client
     .collections('products')
     .retrieve()
-    .then(function (data) {})
+    .then(function (data) { })
     .catch(function (error) {
       server.log.info('Creating search collection [products]', error);
       return client.collections().create(productsSchema);

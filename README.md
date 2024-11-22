@@ -31,17 +31,19 @@ The codebase is organized into the following directories:
 ## Stack
 
 - Fastify
-- Mongodb
 - Typebox
+- Mongodb
+- NATS
+- TypeSense
 
 ## Setup Instructions
 
 ### Prerequisites
 
-- **Node.js** (v14 or higher)
+- **Node.js** (v22 or higher)
 - **MongoDB** (v4.4 or higher)
-- **NPM** or **Yarn**
-- **Environment Variables**: Copy the `.env.template` to `.env` and set the necessary values.
+- **NATS**
+- **TypeSense**
 
 ### Installation
 
@@ -54,8 +56,6 @@ The codebase is organized into the following directories:
 2. **Install dependencies**:
    ```bash
    npm install
-   # or
-   yarn install
    ```
 
 3. **Set up MongoDB**:
@@ -87,8 +87,6 @@ The codebase is organized into the following directories:
 - **To start the server**:
   ```bash
   npm start
-  # or
-  yarn start
   ```
 
 ## Usage Examples
@@ -104,8 +102,6 @@ The codebase is organized into the following directories:
 Run tests using Jest:
 ```bash
 npm test
-# or
-yarn test
 ```
 
 ## Documentation
@@ -150,7 +146,7 @@ This project is UNLICENSED.
 - [ ] User defined Product relations (upsell, crossell..)
 - [ ] Reference expansions
 
-from https://miro.com/app/board/uXjVMFprX3M=/
+## Others
 
 - Define attributes as mandatory for a given channel/store (without forcing it in the data model)
 - Publish only some variants

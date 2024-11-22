@@ -1,7 +1,8 @@
-import { Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
-import { ProductCategory } from '@core/entities/productCategory';
-import { ProductCategoryDAO } from '@infrastructure/repositories/dao/productCategory.dao.schema';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError } from '#core/lib/appError';
+import { type ProductCategory } from '#core/entities/productCategory';
+import { type ProductCategoryDAO } from '#infrastructure/repositories/dao/productCategory.dao.schema';
 
 export interface IProductCategoryRepository {
   create: (category: ProductCategory) => Promise<Result<ProductCategoryDAO, AppError>>;

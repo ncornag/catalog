@@ -1,14 +1,14 @@
-import { TreeFieldsSchema, UpdateChangeParent, UpdateChangeParentSchema } from '@core/lib/tree';
-import { AuditFields } from '@core/lib/auditFields';
+import { TreeFieldsSchema, type UpdateChangeParent, UpdateChangeParentSchema } from '#core/lib/tree';
+import { AuditFields } from '#core/lib/auditFields';
 import { Type, type Static, Optional } from '@sinclair/typebox';
 
 const keyAttributes = { minLength: 2, maxLength: 256, pattern: '^[A-Za-z0-9_-]+$' };
 
 // Action Types
-export enum ProductCategoryUpdateActionType {
-  SETKEY = 'setKey',
-  CHANGENAME = 'changeName',
-  CHANGEPARENT = 'changeParent'
+export const ProductCategoryUpdateActionType: Record<string, string> = {
+  SETKEY: 'setKey',
+  CHANGENAME: 'changeName',
+  CHANGEPARENT: 'changeParent'
 }
 
 // ACTIONS

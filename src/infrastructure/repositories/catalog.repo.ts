@@ -1,10 +1,11 @@
-import { Db, Collection } from '@fastify/mongodb/node_modules/mongodb/mongodb';
-import { Ok, Err, Result } from 'ts-results';
-import { ErrorCode, AppError } from '@core/lib/appError';
-import { type ICatalogRepository } from '@core/repositories/catalog.repo';
-import { Catalog } from '@core/entities/catalog';
-import { CatalogDAO } from '@infrastructure/repositories/dao/catalog.dao.schema';
-import { ITreeRepo } from '@core/lib/tree';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { Db, Collection } from 'mongodb';
+import { ErrorCode, AppError } from '#core/lib/appError';
+import { type ICatalogRepository } from '#core/repositories/catalog.repo';
+import { type Catalog } from '#core/entities/catalog';
+import { type CatalogDAO } from '#infrastructure/repositories/dao/catalog.dao.schema';
+import { type ITreeRepo } from '#core/lib/tree';
 
 export const getCatalogCollection = (db: Db): Collection<CatalogDAO> => {
   return db.collection<CatalogDAO>('Catalog');

@@ -1,22 +1,23 @@
-import { FastifyRequest, FastifyReply, FastifyInstance, FastifyPluginAsync, FastifyPluginOptions } from 'fastify';
-import { Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { type FastifyRequest, type FastifyReply, type FastifyInstance, type FastifyPluginOptions } from 'fastify';
+import { AppError } from '#core/lib/appError';
 import {
-  ClassificationCategoryPayload,
-  UpdateClassificationCategoryBody,
-  UpdateClassificationCategoryParms,
+  type ClassificationCategoryPayload,
+  type UpdateClassificationCategoryBody,
+  type UpdateClassificationCategoryParms,
   postClassificationCategorySchema,
   updateClassificationCategorySchema
-} from '@infrastructure/http/schemas/classificationCategory.schemas';
+} from '#infrastructure/http/schemas/classificationCategory.schemas';
 import {
-  ClassificationAttributePayload,
+  type ClassificationAttributePayload,
   postClassificationAttributeSchema
-} from '../schemas/classificationAttribute.schemas';
-import { ClassificationCategoryService } from '@core/services/classificationCategory.svc';
-import { ClassificationCategory } from '@core/entities/classificationCategory';
-import { ClassificationAttribute } from '@core/entities/classificationAttribute';
+} from '../schemas/classificationAttribute.schemas.ts';
+import { ClassificationCategoryService } from '#core/services/classificationCategory.svc';
+import { type ClassificationCategory } from '#core/entities/classificationCategory';
+import { type ClassificationAttribute } from '#core/entities/classificationAttribute';
 
-export default <FastifyPluginAsync>async function (server: FastifyInstance, opts: FastifyPluginOptions) {
+export default async function (server: FastifyInstance, opts: FastifyPluginOptions) {
   let service = ClassificationCategoryService.getInstance(server);
 
   // CREATE
@@ -110,4 +111,5 @@ export default <FastifyPluginAsync>async function (server: FastifyInstance, opts
       return reply.send(result.val);
     }
   });
-};
+
+}

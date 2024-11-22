@@ -1,5 +1,5 @@
-import { AuditFields } from '@core/lib/auditFields';
-import { Type, Static } from '@sinclair/typebox';
+import { AuditFields } from '#core/lib/auditFields';
+import { Type, type Static } from '@sinclair/typebox';
 
 export const ValueSchema = Type.Object(
   {

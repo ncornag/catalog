@@ -1,20 +1,20 @@
-import { Db, Collection } from '@fastify/mongodb/node_modules/mongodb/mongodb';
-import { Ok, Err, Result } from 'ts-results';
-import { ErrorCode, AppError } from '@core/lib/appError';
-import { type IClassificationCategoryRepository } from '@core/repositories/classificationCategory.repo';
-import { ClassificationCategory } from '@core/entities/classificationCategory';
-import { ClassificationCategoryDAO } from '@infrastructure/repositories/dao/classificationCategory.dao.schema';
-import { ClassificationAttributeDAO } from '@infrastructure/repositories/dao/classificationAttribute.dao.schema';
-import { ClassificationAttributePayload } from '@infrastructure/http/schemas/classificationAttribute.schemas';
-import { ITreeRepo } from '@core/lib/tree';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { Db, Collection } from 'mongodb';
+import { ErrorCode, AppError } from '#core/lib/appError';
+import { type IClassificationCategoryRepository } from '#core/repositories/classificationCategory.repo';
+import { type ClassificationCategory } from '#core/entities/classificationCategory';
+import { type ClassificationCategoryDAO } from '#infrastructure/repositories/dao/classificationCategory.dao.schema';
+import { type ClassificationAttributeDAO } from '#infrastructure/repositories/dao/classificationAttribute.dao.schema';
+import { type ClassificationAttributePayload } from '#infrastructure/http/schemas/classificationAttribute.schemas';
+import { type ITreeRepo } from '#core/lib/tree';
 
 export const getClassificationCategoryCollection = (db: Db): Collection<ClassificationCategoryDAO> => {
   return db.collection<ClassificationCategoryDAO>('ClassificationCategory');
 };
 
 export class ClassificationCategoryRepository
-  implements IClassificationCategoryRepository, ITreeRepo<ClassificationCategoryDAO>
-{
+  implements IClassificationCategoryRepository, ITreeRepo<ClassificationCategoryDAO> {
   private col: Collection<ClassificationCategoryDAO>;
 
   constructor(server: any) {

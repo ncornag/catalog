@@ -1,7 +1,8 @@
-import { Ok, Result } from 'ts-results';
-import { AppError } from '@core/lib/appError';
-import { ActionHandlerResult } from '@core/services/actions';
-import { UpdateProductChangeDescription } from '@core/entities/product';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError } from '#core/lib/appError';
+import { type ActionHandlerResult } from '#core/services/actions/index';
+import { type UpdateProductChangeDescription } from '#core/entities/product';
 
 interface DAOwithDescription {
   [key: string]: any;

@@ -1,6 +1,6 @@
 import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
-import { PriceSchema } from '@core/entities/price';
+import { PriceSchema } from '#core/entities/price';
 
 const defaultExample = {
   name: 'Root Category',
@@ -11,7 +11,7 @@ const PriceResponse = Type.Omit(PriceSchema, ['catalog'], {
   examples: [
     {
       id: '63cd0e4be59031edffa39f5c',
-      verdion: 0,
+      version: 0,
       ...defaultExample,
       createdAt: '2021-01-01T00:00:00.000Z'
     }

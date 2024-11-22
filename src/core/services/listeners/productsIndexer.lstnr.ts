@@ -1,9 +1,10 @@
-import { Product, ProductType } from '@core/entities/product';
+import { type Product, ProductType } from '#core/entities/product';
 import { Value } from '@sinclair/typebox/value';
 import { green, red, magenta, yellow, bold } from 'kolorist';
-import { IProductService, ProductService } from '@core/services/product.svc';
+import { type IProductService, ProductService } from '#core/services/product.svc';
 import { RateLimit } from 'async-sema';
 import { faker } from '@faker-js/faker';
+import pino from 'pino'
 
 export class ProductsIndexerListener {
   private server: any;
@@ -25,7 +26,7 @@ export class ProductsIndexerListener {
 
   public start() {
     this.server.log.info(
-      `${yellow('ProductIndexingService')} ${green('starting in')} [${this.TOPIC}] for [${this.catalogs}] catalogs`
+      `${yellow('ProductIndexingService')} ${green('listening to')} [${this.TOPIC}] ${green('for')} [${this.catalogs}] ${green('catalogs')}`
     );
     this.server.messages.subscribe(this.TOPIC, this.handler.bind(this));
   }
@@ -68,14 +69,14 @@ export class ProductsIndexerListener {
     if (data.source.type !== ProductType.VARIANT) return;
     if (!this.catalogs.includes(data.metadata.catalogId)) return;
     await this.lim();
-    if (this.server.log.isLevelEnabled('debug'))
+    if (this.server.logger.isLevelEnabled('debug'))
       this.server.log.debug(
         `${magenta('#' + data.metadata.requestId || '')} ${this.msgIn} indexing ${green(data.source.id)}`
       );
     if (data.metadata.type === 'entityUpdate') {
       const updates = Value.Patch({}, data.difference);
       updates.id = data.source.id;
-      this.server.search.client.collections('products').documents().update(updates);
+      this.server.index.client.collections('products').documents().update(updates);
     } else if (data.metadata.type === 'entityInsert') {
       // TODO: filter what to index, including fields and locales
 
@@ -86,7 +87,7 @@ export class ProductsIndexerListener {
         return;
       }
       // Index the Variant as a serch document
-      await this.server.search.client
+      await this.server.index.client
         .collections('products')
         .documents()
         .upsert(this.toIndexDocument(productResult.val))

@@ -1,5 +1,5 @@
-import { CatalogSyncSchema } from '@core/entities/catalogSync';
-import { Static, Type } from '@sinclair/typebox';
+import { CatalogSyncSchema } from '#core/entities/catalogSync';
+import { type Static, Type } from '@sinclair/typebox';
 
 // DAO
 export const CatalogSyncDAOSchema = Type.Composite([

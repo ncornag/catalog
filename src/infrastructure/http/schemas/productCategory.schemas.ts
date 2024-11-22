@@ -1,7 +1,7 @@
 import { type FastifySchema } from 'fastify';
 import { Type, type Static } from '@sinclair/typebox';
-import { UpdateProductCategoryAction, ProductCategorySchema } from '@core/entities/productCategory';
-// import { notFoundSchema } from '@infrastructure/http/schemas/error.schemas'
+import { UpdateProductCategoryAction, ProductCategorySchema } from '#core/entities/productCategory';
+// import { notFoundSchema } from '#infrastructure/http/schemas/error.schemas'
 
 const defaultExample = {
   name: 'Root Category',
@@ -12,7 +12,7 @@ const ProductCategoryResponse = Type.Composite([ProductCategorySchema], {
   examples: [
     {
       id: '63cd0e4be59031edffa39f5c',
-      verdion: 0,
+      version: 0,
       ...defaultExample,
       createdAt: '2021-01-01T00:00:00.000Z'
     }

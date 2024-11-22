@@ -1,9 +1,10 @@
-import { Db, Collection } from '@fastify/mongodb/node_modules/mongodb/mongodb';
-import { Ok, Err, Result } from 'ts-results';
-import { ErrorCode, AppError } from '@core/lib/appError';
-import { type IProductRepository } from '@core/repositories/product.repo';
-import { Product, ProductType } from '@core/entities/product';
-import { ProductDAO } from '@infrastructure/repositories/dao/product.dao.schema';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { Db, Collection } from 'mongodb';
+import { ErrorCode, AppError } from '#core/lib/appError';
+import { type IProductRepository } from '#core/repositories/product.repo';
+import { type Product, ProductType } from '#core/entities/product';
+import { type ProductDAO } from '#infrastructure/repositories/dao/product.dao.schema';
 
 export const getProductCollection = async (
   db: Db

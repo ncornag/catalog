@@ -1,6 +1,6 @@
-import { ClassificationCategorySchema } from '@core/entities/classificationCategory';
-import { ITree } from '@core/lib/tree';
-import { Static, Type } from '@sinclair/typebox';
+import { ClassificationCategorySchema } from '#core/entities/classificationCategory';
+import { type ITree } from '#core/lib/tree';
+import { type Static, Type } from '@sinclair/typebox';
 
 // DAO
 export const ClassificationCategoryDAOSchema = Type.Composite([

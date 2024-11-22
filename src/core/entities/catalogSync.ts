@@ -1,9 +1,9 @@
-import { AuditFields } from '@core/lib/auditFields';
+import { AuditFields } from '#core/lib/auditFields';
 import { Type, type Static } from '@sinclair/typebox';
 
 // Action Types
-export enum CatalogSyncUpdateActionType {
-  CHANGENAME = 'changeName'
+export const CatalogSyncUpdateActionType: Record<string, string> = {
+  CHANGENAME: 'changeName'
 }
 
 // ACTIONS

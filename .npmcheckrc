@@ -14,7 +14,9 @@
             "lint-staged",
             "ts-node",
             "@types/node",
-            "ajv-formats"
+            "ajv-formats",
+            "rimraf", 
+            "pino"
         ]
     }
 }

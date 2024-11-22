@@ -1,11 +1,11 @@
-import { AuditFields } from '@core/lib/auditFields';
-import { Type, Static } from '@sinclair/typebox';
+import { AuditFields } from '#core/lib/auditFields';
+import { Type, type Static } from '@sinclair/typebox';
 
 // Action Types
-export enum ProductUpdateActionType {
-  CHANGENAME = 'changeName',
-  CHANGEDESCRIPTION = 'changeDescription',
-  CHANGEKEYWORDS = 'changeKeywords'
+export const ProductUpdateActionType: Record<string, string> = {
+  CHANGENAME: 'changeName',
+  CHANGEDESCRIPTION: 'changeDescription',
+  CHANGEKEYWORDS: 'changeKeywords'
 }
 
 // Localized Strings/Arrays
@@ -66,10 +66,10 @@ export const UpdateProductAction = Type.Union([
 export type UpdateProductAction = Static<typeof UpdateProductAction>;
 
 // PRODUCT TYPES
-export enum ProductType {
-  BASE = 'base',
-  VARIANT = 'variant',
-  COMPOSITE = 'composite'
+export const ProductType: Record<string, string> = {
+  BASE: 'base',
+  VARIANT: 'variant',
+  COMPOSITE: 'composite'
 }
 
 // ENTITY

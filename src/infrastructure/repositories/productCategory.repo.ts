@@ -1,10 +1,11 @@
-import { Db, Collection } from '@fastify/mongodb/node_modules/mongodb/mongodb';
-import { Ok, Err, Result } from 'ts-results';
-import { ErrorCode, AppError } from '@core/lib/appError';
-import { type IProductCategoryRepository } from '@core/repositories/productCategory.repo';
-import { ProductCategory } from '@core/entities/productCategory';
-import { ProductCategoryDAO } from '@infrastructure/repositories/dao/productCategory.dao.schema';
-import { ITreeRepo } from '@core/lib/tree';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { Db, Collection } from 'mongodb';
+import { ErrorCode, AppError } from '#core/lib/appError';
+import { type IProductCategoryRepository } from '#core/repositories/productCategory.repo';
+import { type ProductCategory } from '#core/entities/productCategory';
+import { type ProductCategoryDAO } from '#infrastructure/repositories/dao/productCategory.dao.schema';
+import { type ITreeRepo } from '#core/lib/tree';
 
 export const getProductCategoryCollection = (db: Db): Collection<ProductCategoryDAO> => {
   return db.collection<ProductCategoryDAO>('ProductCategory');

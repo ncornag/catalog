@@ -2,30 +2,38 @@ import fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastif
 import { type TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import fastifyRequestLogger from '@mgcrea/fastify-request-logger';
 import { fastifyRequestContext } from '@fastify/request-context';
-import mongo from '@infrastructure/database/plugins/mongo';
-import nats from '@infrastructure/queues/plugins/nats';
+import mongo from '#infrastructure/database/plugins/mongo';
+import nats from '#infrastructure/queues/plugins/nats';
 
-import docs from '@infrastructure/http/plugins/docs';
-import sendAppError from '@infrastructure/http/plugins/sendAppError';
-import config from '@infrastructure/http/plugins/config';
-import attributesValidator from '@infrastructure/http/plugins/attributesValidator';
-import { requestContextProvider, getRequestIdFastifyAppConfig } from '@infrastructure/http/plugins/requestContext';
-import { AppError, ErrorCode } from '@core/lib/appError';
-import { errorName } from '@infrastructure/database/mongoErrors';
-import { auditLogListener } from '@core/services/listeners/auditLog.lstnr';
-import { productsIndexerListener } from '@core/services/listeners/productsIndexer.lstnr';
-import { pricesIndexerListener } from '@core/services/listeners/pricesIndexer.lstnr';
-import { updateChildAncestorsForIdListener } from '@core/services/listeners/updateChildAncestorsForId.lstnr';
-import classificationCategoryRoutes from '@infrastructure/http/routes/classificationCategory.routes';
-import productCategoryRoutes from '@infrastructure/http/routes/productCategory.routes';
-import productRoutes from '@infrastructure/http/routes/product.routes';
-import productRoutesV1 from '@infrastructure/http/routes/productV1.routes';
-import catalogRoutes from '@infrastructure/http/routes/catalog.routes';
-import catalogSyncRoutes from '@infrastructure/http/routes/catalogSync.routes';
-import cartRoutes from '@infrastructure/http/routes/cart.routes';
-import auditLogRoutes from '@infrastructure/http/routes/auditLog.routes';
-import typesense from '@infrastructure/search/plugins/typesense';
-import priceRoutes from '../routes/price.routes';
+import docs from '#infrastructure/http/plugins/docs';
+import sendAppError from '#infrastructure/http/plugins/sendAppError';
+import config from '#infrastructure/http/plugins/config';
+import attributesValidator from '#infrastructure/http/plugins/attributesValidator';
+import { requestContextProvider, getRequestIdFastifyAppConfig } from '#infrastructure/http/plugins/requestContext';
+import { AppError, ErrorCode } from '#core/lib/appError';
+import { errorName } from '#infrastructure/database/mongoErrors';
+import { auditLogListener } from '#core/services/listeners/auditLog.lstnr';
+import { productsIndexerListener } from '#core/services/listeners/productsIndexer.lstnr';
+import { pricesIndexerListener } from '#core/services/listeners/pricesIndexer.lstnr';
+import { updateChildAncestorsForIdListener } from '#core/services/listeners/updateChildAncestorsForId.lstnr';
+import classificationCategoryRoutes from '#infrastructure/http/routes/classificationCategory.routes';
+import productCategoryRoutes from '#infrastructure/http/routes/productCategory.routes';
+import productRoutes from '#infrastructure/http/routes/product.routes';
+import productRoutesV1 from '#infrastructure/http/routes/productV1.routes';
+import catalogRoutes from '#infrastructure/http/routes/catalog.routes';
+import catalogSyncRoutes from '#infrastructure/http/routes/catalogSync.routes';
+import cartRoutes from '#infrastructure/http/routes/cart.routes';
+import auditLogRoutes from '#infrastructure/http/routes/auditLog.routes';
+import typesense from '#infrastructure/search/plugins/typesense';
+import priceRoutes from '../routes/price.routes.ts';
+import pino from 'pino';
+import ajvFormats from 'ajv-formats';
+
+declare module 'fastify' {
+  interface FastifyInstance {
+    logger: pino.Logger
+  }
+}
 
 export const createServer = async (): Promise<FastifyInstance> => {
   const environment = process.env.NODE_ENV ?? 'production';
@@ -56,13 +64,14 @@ export const createServer = async (): Promise<FastifyInstance> => {
         useDefaults: true
         //keywords: ['kind', 'modifier']
       },
-      plugins: [require('ajv-formats')]
+      plugins: [ajvFormats]
     },
     logger: envToLogger[environment] ?? true,
     disableRequestLogging: true,
     ...getRequestIdFastifyAppConfig()
   };
   const server = fastify(serverOptions).withTypeProvider<TypeBoxTypeProvider>();
+  server.logger = server.log as pino.Logger
 
   // Global Error handler
   server.setErrorHandler(function (error, request, reply) {

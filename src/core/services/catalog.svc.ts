@@ -1,16 +1,17 @@
-import { Err, Ok, Result } from 'ts-results';
-import { AppError, ErrorCode } from '@core/lib/appError';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError, ErrorCode } from '#core/lib/appError';
 import { Value } from '@sinclair/typebox/value';
 import { nanoid } from 'nanoid';
-import { type Catalog, UpdateCatalogAction } from '@core/entities/catalog';
-import { type CreateCatalogBody } from '@infrastructure/http/schemas/catalog.schemas';
-import { CatalogDAO } from '@infrastructure/repositories/dao/catalog.dao.schema';
-import { ActionHandlersList } from '@core/services/actions';
-import { ICatalogRepository } from '@core/repositories/catalog.repo';
-import { UpdateEntityActionsRunner } from '@core/lib/updateEntityActionsRunner';
-import { ChangeNameActionHandler } from './actions/changeName.handler';
-import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler';
-import { Config } from '@infrastructure/http/plugins/config';
+import { type Catalog, UpdateCatalogAction } from '#core/entities/catalog';
+import { type CreateCatalogBody } from '#infrastructure/http/schemas/catalog.schemas';
+import { type CatalogDAO } from '#infrastructure/repositories/dao/catalog.dao.schema';
+import { type ActionHandlersList } from '#core/services/actions/index';
+import { type ICatalogRepository } from '#core/repositories/catalog.repo';
+import { UpdateEntityActionsRunner } from '#core/lib/updateEntityActionsRunner';
+import { ChangeNameActionHandler } from './actions/changeName.handler.ts';
+import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler.ts';
+import { type Config } from '#infrastructure/http/plugins/config';
 
 // SERVICE INTERFACE
 export interface ICatalogService {

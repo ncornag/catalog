@@ -1,11 +1,12 @@
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
 import {
-  ActionHandlerResult,
-  ActionHandlersList,
-  ActionHandlerDAO,
-  ActionHandlerRepository
-} from '@core/services/actions';
-import { Ok, Result } from 'ts-results';
-import { AppError } from './appError';
+  type ActionHandlerResult,
+  type ActionHandlersList,
+  type ActionHandlerDAO,
+  type ActionHandlerRepository
+} from '#core/services/actions/index';
+import { AppError } from './appError.ts';
 
 export class UpdateEntityActionsRunner<DAO extends ActionHandlerDAO, REPO extends ActionHandlerRepository> {
   async run(

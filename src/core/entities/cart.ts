@@ -1,6 +1,6 @@
-import { AuditFields } from '@core/lib/auditFields';
-import { Type, Static } from '@sinclair/typebox';
-import { ValueSchema } from '@core/entities/price';
+import { AuditFields } from '#core/lib/auditFields';
+import { Type, type Static } from '@sinclair/typebox';
+import { ValueSchema } from '#core/entities/price';
 
 const CartProductSchema = Type.Object({
   productId: Type.String(),

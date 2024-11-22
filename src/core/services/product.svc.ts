@@ -1,18 +1,19 @@
-import { Err, Ok, Result } from 'ts-results';
-import { AppError, ErrorCode } from '@core/lib/appError';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError, ErrorCode } from '#core/lib/appError';
 import { Value } from '@sinclair/typebox/value';
 import { nanoid } from 'nanoid';
-import { type Product, UpdateProductAction, ProductType } from '@core/entities/product';
-import { type CartProduct } from '@core/entities/cart';
-import { type CreateProductBody } from '@infrastructure/http/schemas/product.schemas';
-import { ProductDAO } from '@infrastructure/repositories/dao/product.dao.schema';
-import { ActionHandlersList } from '@core/services/actions';
-import { IProductRepository } from '@core/repositories/product.repo';
-import { UpdateEntityActionsRunner } from '@core/lib/updateEntityActionsRunner';
-import { ChangeNameActionHandler } from './actions/changeName.handler';
-import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler';
-import { Config } from '@infrastructure/http/plugins/config';
-import { ChangeKeywordsActionHandler } from './actions/changeKeywords.handler';
+import { type Product, UpdateProductAction, ProductType } from '#core/entities/product';
+import { type CartProduct } from '#core/entities/cart';
+import { type CreateProductBody } from '#infrastructure/http/schemas/product.schemas';
+import { type ProductDAO } from '#infrastructure/repositories/dao/product.dao.schema';
+import { type ActionHandlersList } from '#core/services/actions/index';
+import { type IProductRepository } from '#core/repositories/product.repo';
+import { UpdateEntityActionsRunner } from '#core/lib/updateEntityActionsRunner';
+import { ChangeNameActionHandler } from './actions/changeName.handler.ts';
+import { ChangeDescriptionActionHandler } from './actions/changeDescription.handler.ts';
+import { type Config } from '#infrastructure/http/plugins/config';
+import { ChangeKeywordsActionHandler } from './actions/changeKeywords.handler.ts';
 import NodeCache from 'node-cache';
 
 // SERVICE INTERFACE

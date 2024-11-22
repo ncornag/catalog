@@ -1,19 +1,20 @@
-import { Err, Ok, Result } from 'ts-results';
-import { AppError, ErrorCode } from '@core/lib/appError';
+import tsresult, { type Result } from 'ts-results';
+const { Ok, Err } = tsresult;
+import { AppError, ErrorCode } from '#core/lib/appError';
 import { Value } from '@sinclair/typebox/value';
 import { nanoid } from 'nanoid';
-import { type ClassificationCategory, UpdateClassificationCategoryAction } from '@core/entities/classificationCategory';
-import { type ClassificationAttribute, ClassificationAttributeSchema } from '@core/entities/classificationAttribute';
-import { type ClassificationCategoryPayload } from '@infrastructure/http/schemas/classificationCategory.schemas';
-import { type ClassificationAttributePayload } from '@infrastructure/http/schemas/classificationAttribute.schemas';
-import { ClassificationCategoryDAO } from '@infrastructure/repositories/dao/classificationCategory.dao.schema';
-import { IClassificationCategoryRepository } from '@core/repositories/classificationCategory.repo';
-import { ActionHandlersList } from '@core/services/actions';
-import { ChangeParentActionHandler } from '@core/lib/tree';
-import { SetKeyActionHandler } from '@core/services/actions/setKey.handler';
-import { ChangeNameActionHandler } from '@core/services/actions/changeName.handler';
-import { UpdateEntityActionsRunner } from '@core/lib/updateEntityActionsRunner';
-import { Config } from '@infrastructure/http/plugins/config';
+import { type ClassificationCategory, UpdateClassificationCategoryAction } from '#core/entities/classificationCategory';
+import { type ClassificationAttribute, ClassificationAttributeSchema } from '#core/entities/classificationAttribute';
+import { type ClassificationCategoryPayload } from '#infrastructure/http/schemas/classificationCategory.schemas';
+import { type ClassificationAttributePayload } from '#infrastructure/http/schemas/classificationAttribute.schemas';
+import { type ClassificationCategoryDAO } from '#infrastructure/repositories/dao/classificationCategory.dao.schema';
+import { type IClassificationCategoryRepository } from '#core/repositories/classificationCategory.repo';
+import { type ActionHandlersList } from '#core/services/actions/index';
+import { ChangeParentActionHandler } from '#core/lib/tree';
+import { SetKeyActionHandler } from '#core/services/actions/setKey.handler';
+import { ChangeNameActionHandler } from '#core/services/actions/changeName.handler';
+import { UpdateEntityActionsRunner } from '#core/lib/updateEntityActionsRunner';
+import { type Config } from '#infrastructure/http/plugins/config';
 
 // SERVICE INTERFACE
 export interface IClassificationCategoryService {
@@ -142,6 +143,7 @@ export class ClassificationCategoryService implements IClassificationCategorySer
       actionRunnerResults.val.sideEffects?.forEach((sideEffect: any) => {
         this.messages.publish('global.classificationCategory.update.sideEffect', {
           ...sideEffect.data,
+          entity: 'classificationCategory',
           metadata: { type: sideEffect.action }
         });
       });
