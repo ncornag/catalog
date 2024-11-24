@@ -37,7 +37,6 @@ declare module 'fastify' {
 
 export const createServer = async (): Promise<FastifyInstance> => {
   const environment = process.env.NODE_ENV ?? 'production';
-
   // Logger options per environment
   const envToLogger: any = {
     development: {
@@ -72,6 +71,9 @@ export const createServer = async (): Promise<FastifyInstance> => {
   };
   const server = fastify(serverOptions).withTypeProvider<TypeBoxTypeProvider>();
   server.logger = server.log as pino.Logger
+  if (!server.logger.isLevelEnabled) {
+    server.logger.isLevelEnabled = () => false;
+  }
 
   // Global Error handler
   server.setErrorHandler(function (error, request, reply) {
