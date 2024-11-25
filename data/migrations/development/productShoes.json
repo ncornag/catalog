@@ -1,0 +1,90 @@
+[
+    {
+        "_id": "adizeroPrimeX2-base",
+        "version": 0,
+        "projectId": "TestProject",
+        "catalog": "stage",
+        "name": {
+            "en": "ADIZERO PRIME X 2 STRUNG RUNNING SHOES"
+        },
+        "description": {
+            "en": "Built with innovative technology and designed without ..."
+        },
+        "slug": "adizero-prime-x-2-strung-running-shoes",
+        "searchKeywords": [
+            "adizero",
+            "prime",
+            "x",
+            "2",
+            "strung",
+            "running",
+            "shoes"
+        ],
+        "categories": [
+            "shoes"
+        ],
+        "type": "base",
+        "assets": [
+            {
+                "url": "https://commercetools.com/cli/data/253245821_1.jpg",
+                "tags": [
+                    "image",
+                    "main",
+                    "800x500"
+                ]
+            },
+            {
+                "label": "User Manual",
+                "url": "https://commercetools.com/cli/data/manual.pdf",
+                "tags": [
+                    "pdf"
+                ]
+            }
+        ]
+    },
+    {
+        "_id": "adizeroPrimeX2-White-001",
+        "version": 0,
+        "projectId": "TestProject",
+        "catalog": "stage",
+        "name": {
+            "en": "ADIZERO PRIME X 2 STRUNG RUNNING SHOES WHITE!!!"
+        },
+        "sku": "HP9708_570",
+        "searchKeywords": [
+            "white"
+        ],
+        "type": "variant",
+        "parent": "adizeroPrimeX2-base",
+        "attributes": {
+            "color": "Cloud White",
+            "size": "M 6/W 7"
+        }
+    },
+    {
+        "_id": "adizeroPrimeX2-White-002",
+        "version": 0,
+        "projectId": "TestProject",
+        "catalog": "stage",
+        "sku": "HP9708_580",
+        "type": "variant",
+        "parent": "adizeroPrimeX2-base",
+        "attributes": {
+            "color": "Cloud White",
+            "size": "M 6.5/W 7.5"
+        }
+    },
+    {
+        "_id": "adizeroPrimeX2-Black-001",
+        "version": 0,
+        "projectId": "TestProject",
+        "catalog": "stage",
+        "sku": "HP9709_580",
+        "type": "variant",
+        "parent": "adizeroPrimeX2-base",
+        "attributes": {
+            "color": "Core Black",
+            "size": "M 6.5/W 7.5"
+        }
+    }
+]

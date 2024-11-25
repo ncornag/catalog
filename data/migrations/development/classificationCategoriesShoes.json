@@ -1,0 +1,26 @@
+[
+    {
+        "_id": "shoes",
+        "projectId": "TestProject",
+        "name": "Shoes",
+        "key": "shoes",
+        "parent": "",
+        "attributes": [
+            {
+                "key": "color",
+                "label": "Color",
+                "isRequired": true,
+                "type": "text"
+            },
+            {
+                "key": "size",
+                "label": "Size",
+                "isRequired": true,
+                "type": "text"
+            }
+        ],
+        "ancestors": [],
+        "version": 0,
+        "createdAt": "2023-01-15T00:00:00.000+00:00"
+    }
+]

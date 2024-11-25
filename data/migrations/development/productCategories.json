@@ -1,0 +1,43 @@
+[
+    {
+        "_id": "mana",
+        "projectId": "TestProject",
+        "name": "Manufacturer A",
+        "key": "manA",
+        "parent": "",
+        "classificationCategories": [
+            "machines"
+        ],
+        "ancestors": [],
+        "version": 0,
+        "createdAt": "2023-01-15T00:00:00.000+00:00"
+    },
+    {
+        "_id": "printers",
+        "projectId": "TestProject",
+        "name": "Printers",
+        "key": "printers",
+        "parent": "mana",
+        "classificationCategories": [],
+        "ancestors": [
+            "mana"
+        ],
+        "version": 0,
+        "createdAt": "2023-01-15T00:00:00.000+00:00"
+    },
+    {
+        "_id": "laptops",
+        "projectId": "TestProject",
+        "name": "Laptops",
+        "key": "laptops",
+        "parent": "mana",
+        "classificationCategories": [
+            "cpu"
+        ],
+        "ancestors": [
+            "mana"
+        ],
+        "version": 0,
+        "createdAt": "2023-01-15T00:00:00.000+00:00"
+    }
+]

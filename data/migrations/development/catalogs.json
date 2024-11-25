@@ -1,0 +1,12 @@
+[
+    {
+        "_id": "stage",
+        "projectId": "TestProject",
+        "name": "Stage"
+    },
+    {
+        "_id": "online",
+        "projectId": "TestProject",
+        "name": "Online"
+    }
+]

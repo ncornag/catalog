@@ -1,0 +1,41 @@
+[
+    {
+        "_id": "home",
+        "projectId": "TestProject",
+        "name": "Home",
+        "key": "home",
+        "parent": "",
+        "classificationCategories": [],
+        "ancestors": [],
+        "version": 0,
+        "createdAt": "2023-01-15T00:00:00.000+00:00"
+    },
+    {
+        "_id": "running",
+        "projectId": "TestProject",
+        "name": "Running",
+        "key": "running",
+        "parent": "home",
+        "classificationCategories": [],
+        "ancestors": [
+            "home"
+        ],
+        "version": 0,
+        "createdAt": "2023-01-15T00:00:00.000+00:00"
+    },
+    {
+        "_id": "shoes",
+        "projectId": "TestProject",
+        "name": "shoes",
+        "key": "shoes",
+        "parent": "running",
+        "classificationCategories": [
+            "shoes"
+        ],
+        "ancestors": [
+            "running"
+        ],
+        "version": 0,
+        "createdAt": "2023-01-15T00:00:00.000+00:00"
+    }
+]

@@ -1,0 +1,189 @@
+[
+  {
+    "_id": "machine-properties",
+    "projectId": "TestProject",
+    "name": "Machine Properties",
+    "key": "machine-properties",
+    "parent": "",
+    "attributes": [
+      {
+        "key": "wheels",
+        "label": "Wheels",
+        "isRequired": true,
+        "type": "number",
+        "min": 1,
+        "max": 18
+      },
+      {
+        "key": "color",
+        "label": "Color",
+        "isRequired": true,
+        "type": "enum",
+        "options": [
+          {
+            "key": "Y",
+            "label": "Yellow"
+          },
+          {
+            "key": "O",
+            "label": "Orange"
+          },
+          {
+            "key": "G",
+            "label": "Green"
+          }
+        ]
+      },
+      {
+        "key": "options",
+        "label": "Options",
+        "isRequired": false,
+        "type": "list",
+        "elementType": "text"
+      }
+    ],
+    "ancestors": [],
+    "version": 0,
+    "createdAt": "2023-01-15T00:00:00.000+00:00"
+  },
+  {
+    "_id": "hardware",
+    "projectId": "TestProject",
+    "name": "Hardware",
+    "key": "hardware",
+    "parent": "",
+    "attributes": [],
+    "ancestors": [],
+    "version": 0,
+    "createdAt": "2023-01-15T00:00:00.000+00:00"
+  },
+  {
+    "_id": "cpu",
+    "projectId": "TestProject",
+    "name": "CPU",
+    "key": "cpu",
+    "parent": "hardware",
+    "attributes": [
+      {
+        "key": "speed",
+        "label": "clockSpeed",
+        "isRequired": false,
+        "type": "number"
+      },
+      {
+        "key": "cache",
+        "label": "Cache",
+        "isRequired": true,
+        "type": "text"
+      }
+    ],
+    "ancestors": [
+      "hardware"
+    ],
+    "version": 0,
+    "createdAt": "2023-01-15T00:00:00.000+00:00"
+  },
+  {
+    "_id": "photography",
+    "projectId": "TestProject",
+    "name": "Photography",
+    "key": "photography",
+    "attributes": [
+      {
+        "key": "sensor",
+        "label": "Sensor",
+        "isRequired": true,
+        "type": "text"
+      },
+      {
+        "key": "res",
+        "label": "Resolutions",
+        "isRequired": true,
+        "type": "text"
+      }
+    ],
+    "parent": "hardware",
+    "ancestors": [
+      "hardware"
+    ],
+    "version": 0,
+    "createdAt": "2023-01-15T00:00:00.000+00:00"
+  },
+  {
+    "_id": "electricity",
+    "projectId": "TestProject",
+    "name": "Electricity Things",
+    "key": "electricity",
+    "parent": "",
+    "attributes": [
+      {
+        "key": "curr",
+        "label": "current",
+        "isRequired": true,
+        "type": "number"
+      }
+    ],
+    "ancestors": [],
+    "version": 0,
+    "createdAt": "2023-01-15T00:00:00.000+00:00"
+  },
+  {
+    "_id": "machines",
+    "projectId": "TestProject",
+    "name": "Machines",
+    "key": "machines",
+    "parent": "electricity",
+    "attributes": [
+      {
+        "key": "size",
+        "label": "size",
+        "isRequired": true,
+        "type": "text"
+      },
+      {
+        "key": "weight",
+        "label": "weight",
+        "isRequired": true,
+        "type": "number"
+      },
+      {
+        "key": "characteristics",
+        "label": "Characteristics",
+        "isRequired": true,
+        "type": "object",
+        "ref": "machine-properties"
+      }
+    ],
+    "ancestors": [
+      "electricity"
+    ],
+    "version": 0,
+    "createdAt": "2023-01-15T00:00:00.000+00:00"
+  },
+  {
+    "_id": "software",
+    "projectId": "TestProject",
+    "name": "Software",
+    "key": "software",
+    "parent": "electricity",
+    "attributes": [
+      {
+        "key": "req",
+        "label": "requirements",
+        "isRequired": true,
+        "type": "text"
+      },
+      {
+        "key": "lan",
+        "label": "language",
+        "isRequired": true,
+        "type": "text"
+      }
+    ],
+    "ancestors": [
+      "electricity"
+    ],
+    "version": 0,
+    "createdAt": "2023-01-15T00:00:00.000+00:00"
+  }
+]
