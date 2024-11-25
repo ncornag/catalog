@@ -171,7 +171,7 @@ export default fp(async function (server: FastifyInstance) {
     storage: new MongoDBStorage({
       collection: server.mongo.db!.collection('migrations')
     }),
-    logger,
+    logger: server.log,
     context: {
       server,
     },

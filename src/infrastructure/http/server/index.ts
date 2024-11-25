@@ -51,7 +51,18 @@ export const createServer = async (): Promise<FastifyInstance> => {
       }
     },
     production: true,
-    test: false
+    test: {
+      level: process.env.LOG_LEVEL,
+      transport: {
+        target: '@mgcrea/pino-pretty-compact',
+        options: {
+          translateTime: 'yyyy-mm-dd HH:MM:ss.l',
+          colorize: true,
+          ignore: 'pid,hostname,plugin'
+        }
+      }
+    },
+    //test: false
   };
 
   // Server

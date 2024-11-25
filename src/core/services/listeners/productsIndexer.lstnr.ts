@@ -20,7 +20,7 @@ export class ProductsIndexerListener {
 
   constructor(server: any) {
     this.server = server;
-    this.catalogs = server.config.CATALOGS_TO_INDEX.split(',');
+    this.catalogs = server.config.CATALOGS_TO_INDEX?.split(',');
     this.productService = ProductService.getInstance(server);
   }
 

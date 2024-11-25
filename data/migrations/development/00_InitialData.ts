@@ -41,6 +41,14 @@ export async function up(params: any): Promise<void> {
     await db.collection('ProductStage').insertMany(productComposite);
 };
 
-export async function down(context: any): Promise<void> {
-
+export async function down(params: any): Promise<void> {
+    const db = params.context.server.mongo.db;
+    await db.collection('ClassificationCategory').deleteMany({});
+    await db.collection('ClassificationCategory').deleteMany({});
+    await db.collection('ProductCategory').deleteMany({});
+    await db.collection('ProductCategory').deleteMany({});
+    await db.collection('Catalog').deleteMany({});
+    await db.collection('CatalogSync').deleteMany({});
+    await db.collection('ProductStage').deleteMany({});
+    await db.collection('ProductStage').deleteMany({});
 };

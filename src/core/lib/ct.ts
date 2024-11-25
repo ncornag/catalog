@@ -32,7 +32,7 @@ export class CT {
       CT_AUTHHOST: authHost,
       CT_HTTPHOST: httpHost,
       CT_PROJECTKEY: projectKey,
-      CT_SCOPE: [scopes],
+      CT_SCOPE: scopes,
       CT_CLIENTID: clientId,
       CT_CLIENTSECRET: clientSecret
     } = this.server.config;

@@ -22,6 +22,16 @@ export default fp(async function (server: FastifyInstance) {
   };
   const msgOut = bold(yellow('→')) + yellow('MSG:');
   const { NATS_URL: nats_url } = server.config;
+
+  if (!nats_url) {
+    server.decorate('messages', {
+      subscribe: (subject: string, handler: Function) => {
+      },
+      publish: (subject: string, payload: any, options?: PublishOptions) => {
+      }
+    })
+    return
+  }
   const logger = server.log.child({}, { level: server.config.LOG_LEVEL_NATS ?? server.config.LOG_LEVEL }) as pino.Logger
   const connectParams = { name: options.connection_name, servers: nats_url }
 

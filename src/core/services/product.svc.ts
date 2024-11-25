@@ -25,7 +25,7 @@ export interface IProductService {
   cartProducById: (catalogId: string, ids: string[], locale: string) => Promise<Result<CartProduct[], AppError>>;
 }
 
-const toEntity = ({ _id, ...remainder }: ProductDAO): Product => ({
+export const toEntity = ({ _id, ...remainder }: ProductDAO): Product => ({
   id: _id,
   ...remainder
 });

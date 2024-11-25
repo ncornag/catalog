@@ -13,6 +13,10 @@ declare module 'fastify' {
 export default fp(async function (server: FastifyInstance) {
   const { TYPESENSE_HOST: ts_host, TYPESENSE_PORT: ts_port, TYPESENSE_API_KEY: ts_key } = server.config;
 
+  if (!ts_host) {
+    return
+  }
+
   try {
     let client = new Client({
       nodes: [
@@ -23,7 +27,8 @@ export default fp(async function (server: FastifyInstance) {
         }
       ],
       apiKey: ts_key!,
-      connectionTimeoutSeconds: 2
+      connectionTimeoutSeconds: 2,
+      logLevel: 'error'
     });
 
     server.decorate('index', {
