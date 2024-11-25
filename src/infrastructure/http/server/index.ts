@@ -36,6 +36,7 @@ declare module 'fastify' {
 }
 
 export const createServer = async (): Promise<FastifyInstance> => {
+  console.log('NODE_ENV', process.env.NODE_ENV);
   const environment = process.env.NODE_ENV ?? 'production';
   // Logger options per environment
   const envToLogger: any = {
@@ -51,7 +52,18 @@ export const createServer = async (): Promise<FastifyInstance> => {
       }
     },
     production: true,
-    test: false
+    test: {
+      level: process.env.LOG_LEVEL,
+      transport: {
+        target: '@mgcrea/pino-pretty-compact',
+        options: {
+          translateTime: 'yyyy-mm-dd HH:MM:ss.l',
+          colorize: true,
+          ignore: 'pid,hostname,plugin'
+        }
+      }
+    },
+    //test: false
   };
 
   // Server

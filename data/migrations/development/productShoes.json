@@ -10,16 +10,28 @@
         "description": {
             "en": "Built with innovative technology and designed without ..."
         },
-        "slug": "adizero-prime-x-2-strung-running-shoes",
-        "searchKeywords": [
-            "adizero",
-            "prime",
-            "x",
-            "2",
-            "strung",
-            "running",
-            "shoes"
-        ],
+        "slug": {
+            "en": "adizero-prime-x-2-strung-running-shoes"
+        },
+        "searchKeywords": {
+            "en": [
+                {
+                    "text": "adizero"
+                },
+                {
+                    "text": "prime"
+                },
+                {
+                    "text": "x"
+                },
+                {
+                    "text": "running"
+                },
+                {
+                    "text": "shoes"
+                }
+            ]
+        },
         "categories": [
             "shoes"
         ],
