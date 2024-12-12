@@ -1,3 +1,8 @@
+# Deprecated
+
+This project is not currently under active development, it has been replaced by [this one](https://github.com/ncornag/ecomm).
+
+---
 
 # Catalog
 
@@ -48,12 +53,14 @@ The codebase is organized into the following directories:
 ### Installation
 
 1. **Clone the repository**:
+
    ```bash
    git clone <repository_url>
    cd <repository_directory>
    ```
 
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
@@ -70,16 +77,19 @@ The codebase is organized into the following directories:
 ### Running the Application
 
 - **To import products**:
+
   ```bash
   node data/ct/importProducts.ts <firstProductToImport> <productsToImport> <stageSuffix> <currentSuffix>
   ```
 
 - **To create products**:
+
   ```bash
   node data/createProducts.ts <productsToInsert> <variantsPerProduct> <pricesPerVariant> <stageSuffix> <currentSuffix>
   ```
 
 - **To update products**:
+
   ```bash
   node data/updateProducts.ts <productsToModify>
   ```
@@ -100,6 +110,7 @@ The codebase is organized into the following directories:
 ## Testing
 
 Run tests using Jest:
+
 ```bash
 npm test
 ```
@@ -124,22 +135,22 @@ This project is UNLICENSED.
 
 # Todos
 
-- [X] Versions
-- [X] Timestamps
-- [X] Server wide Project field
-- [X] Separate base/variants in their own documents
-- [X] Separate stage/online (Catalogs)
-- [X] Add Catalog sync
-- [X] AuditLog
-- [X] Catalog Sync
-- [X] i18n Strings fields
-- [X] Search
-- [X] Prices
-- [X] commercetools layer
+- [x] Versions
+- [x] Timestamps
+- [x] Server wide Project field
+- [x] Separate base/variants in their own documents
+- [x] Separate stage/online (Catalogs)
+- [x] Add Catalog sync
+- [x] AuditLog
+- [x] Catalog Sync
+- [x] i18n Strings fields
+- [x] Search
+- [x] Prices
+- [x] commercetools layer
   - [/] Import Products with Prices
-  - [X] v1/getProduct endpoint
-- [X] Create Random Products & Prices
-- [X] Promotions
+  - [x] v1/getProduct endpoint
+- [x] Create Random Products & Prices
+- [x] Promotions
 - [ ] Review Enum/List/Set attribute types
 - [ ] Images/Assets fields
 - [ ] Reference fields
